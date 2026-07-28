@@ -1,0 +1,14 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "Nodesmith",
+  "outputfilename": "nodesmith",
+  "frontend:install": "pnpm install",
+  "frontend:build": "pnpm run build",
+  "frontend:dev:watcher": "pnpm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "Michael Olawale",
+    "email": "tech@mykelcodes.com"
+  },
+  "wailsjsdir": "./frontend/src/lib"
+}
