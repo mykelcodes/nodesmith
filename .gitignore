@@ -1,9 +1,11 @@
 build/bin
 node_modules
 frontend/node_modules
+.pnpm-store
 frontend/.svelte-kit
 frontend/dist
-frontend/build
+frontend/build/*
+!frontend/build/.gitkeep
 coverage
 *.log
 .DS_Store

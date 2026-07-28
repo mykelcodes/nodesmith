@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="background" x1="130" y1="80" x2="900" y2="950" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#181E2B"/>
+      <stop offset="1" stop-color="#090B10"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="220" y1="170" x2="820" y2="870" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A89BFF"/>
+      <stop offset="1" stop-color="#6CB8FF"/>
+    </linearGradient>
+    <filter id="glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="30"/>
+    </filter>
+  </defs>
+  <rect x="44" y="44" width="936" height="936" rx="220" fill="url(#background)"/>
+  <path d="M512 208 804 372v304L512 840 220 676V372L512 208Z" fill="none" opacity=".35" stroke="#8F91FF" stroke-linejoin="round" stroke-width="70" filter="url(#glow)"/>
+  <path d="M512 208 804 372v304L512 840 220 676V372L512 208Z" fill="none" stroke="url(#mark)" stroke-linejoin="round" stroke-width="64"/>
+  <path d="m370 440 142-80 142 80v168L512 688l-142-80V440Z" fill="none" stroke="#F8FAFF" stroke-linejoin="round" stroke-width="58"/>
+  <path d="m370 440 142 80 142-80M512 520v168" fill="none" stroke="#F8FAFF" stroke-linecap="round" stroke-linejoin="round" stroke-width="58"/>
+</svg>

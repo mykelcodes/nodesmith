@@ -1,0 +1,89 @@
+:root {
+	color-scheme: dark;
+
+	--ns-canvas: #090b10;
+	--ns-panel: #0f131b;
+	--ns-panel-raised: #151a24;
+	--ns-overlay: #1b2230;
+	--ns-line: #252c3a;
+	--ns-line-strong: #364052;
+	--ns-ink: #f4f7fb;
+	--ns-ink-muted: #a7b0bf;
+	--ns-ink-faint: #707b8c;
+	--ns-brand: #8b7cff;
+	--ns-brand-strong: #a99fff;
+	--ns-brand-soft: #24213f;
+	--ns-success: #55d6a7;
+	--ns-success-soft: #122d27;
+	--ns-warning: #f5bd61;
+	--ns-warning-soft: #342713;
+	--ns-danger: #ff7b85;
+	--ns-danger-soft: #361b22;
+	--ns-info: #6cb8ff;
+	--ns-info-soft: #142b42;
+
+	--ns-font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+	--ns-font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+	--ns-radius-control: 0.625rem;
+	--ns-radius-panel: 0.875rem;
+	--ns-shadow-panel: 0 18px 48px rgb(0 0 0 / 0.3);
+	--ns-shadow-float: 0 22px 70px rgb(0 0 0 / 0.48);
+	--ns-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme='light'] {
+	color-scheme: light;
+
+	--ns-canvas: #f4f5f8;
+	--ns-panel: #ffffff;
+	--ns-panel-raised: #f8f9fb;
+	--ns-overlay: #ffffff;
+	--ns-line: #dfe3ea;
+	--ns-line-strong: #c7cdd8;
+	--ns-ink: #171a21;
+	--ns-ink-muted: #5f6878;
+	--ns-ink-faint: #667085;
+	--ns-brand: #6454e8;
+	--ns-brand-strong: #5140d0;
+	--ns-brand-soft: #ebe9ff;
+	--ns-success: #0b7150;
+	--ns-success-soft: #e0f5ec;
+	--ns-warning: #8a4b00;
+	--ns-warning-soft: #fff0d6;
+	--ns-danger: #b12b3a;
+	--ns-danger-soft: #ffe7e9;
+	--ns-info: #0d5fa8;
+	--ns-info-soft: #e3f1ff;
+	--ns-shadow-panel: 0 18px 48px rgb(23 26 33 / 0.08);
+	--ns-shadow-float: 0 22px 70px rgb(23 26 33 / 0.16);
+}
+
+@theme inline {
+	--color-canvas: var(--ns-canvas);
+	--color-panel: var(--ns-panel);
+	--color-panel-raised: var(--ns-panel-raised);
+	--color-overlay: var(--ns-overlay);
+	--color-line: var(--ns-line);
+	--color-line-strong: var(--ns-line-strong);
+	--color-ink: var(--ns-ink);
+	--color-ink-muted: var(--ns-ink-muted);
+	--color-ink-faint: var(--ns-ink-faint);
+	--color-brand: var(--ns-brand);
+	--color-brand-strong: var(--ns-brand-strong);
+	--color-brand-soft: var(--ns-brand-soft);
+	--color-success: var(--ns-success);
+	--color-success-soft: var(--ns-success-soft);
+	--color-warning: var(--ns-warning);
+	--color-warning-soft: var(--ns-warning-soft);
+	--color-danger: var(--ns-danger);
+	--color-danger-soft: var(--ns-danger-soft);
+	--color-info: var(--ns-info);
+	--color-info-soft: var(--ns-info-soft);
+	--font-sans: var(--ns-font-sans);
+	--font-mono: var(--ns-font-mono);
+	--radius-control: var(--ns-radius-control);
+	--radius-panel: var(--ns-radius-panel);
+	--shadow-panel: var(--ns-shadow-panel);
+	--shadow-float: var(--ns-shadow-float);
+	--ease-out-smooth: var(--ns-ease-out);
+}

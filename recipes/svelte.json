@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "id": "svelte",
+  "name": "Svelte",
+  "category": "frontend",
+  "description": "A client-side Svelte application powered by the official Vite starter.",
+  "docsUrl": "https://svelte.dev/docs/svelte/overview",
+  "tags": [
+    "spa",
+    "svelte",
+    "vite"
+  ],
+  "icon": "svelte",
+  "verifiedAt": "2026-07-28",
+  "requires": {
+    "node": ">=20.19.0",
+    "packageManagers": [
+      "pnpm",
+      "npm",
+      "yarn",
+      "bun"
+    ],
+    "tools": []
+  },
+  "fields": [
+    {
+      "id": "typescript",
+      "label": "TypeScript",
+      "type": "boolean",
+      "default": true,
+      "help": "Generate typed .ts source files and a TypeScript configuration."
+    }
+  ],
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold Svelte project",
+      "bin": "npx",
+      "cwd": "parentDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "--yes",
+        "create-vite@latest",
+        "${projectName}",
+        "--template",
+        {
+          "if": "typescript",
+          "then": [
+            "svelte-ts"
+          ],
+          "else": [
+            "svelte"
+          ]
+        },
+        "--no-interactive"
+      ]
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "${packageManager}",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "install"
+      ],
+      "when": "installDeps"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "init"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "add",
+        "--all"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "when": "gitInit"
+    }
+  ]
+}

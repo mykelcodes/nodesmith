@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "id": "tauri",
+  "name": "Tauri",
+  "category": "desktop",
+  "description": "A small cross-platform desktop application with a Rust backend and web frontend.",
+  "docsUrl": "https://tauri.app/start/",
+  "tags": [
+    "desktop",
+    "rust",
+    "tauri"
+  ],
+  "icon": "tauri",
+  "verifiedAt": "2026-07-28",
+  "requires": {
+    "node": ">=18.0.0",
+    "packageManagers": [
+      "pnpm",
+      "npm",
+      "yarn",
+      "bun"
+    ],
+    "tools": [
+      "cargo"
+    ]
+  },
+  "fields": [
+    {
+      "id": "template",
+      "label": "Frontend template",
+      "type": "select",
+      "default": "svelte-ts",
+      "options": [
+        {
+          "value": "vanilla",
+          "label": "Vanilla JavaScript"
+        },
+        {
+          "value": "vanilla-ts",
+          "label": "Vanilla TypeScript"
+        },
+        {
+          "value": "react",
+          "label": "React"
+        },
+        {
+          "value": "react-ts",
+          "label": "React + TypeScript"
+        },
+        {
+          "value": "svelte",
+          "label": "Svelte"
+        },
+        {
+          "value": "svelte-ts",
+          "label": "Svelte + TypeScript"
+        },
+        {
+          "value": "solid",
+          "label": "Solid"
+        },
+        {
+          "value": "solid-ts",
+          "label": "Solid + TypeScript"
+        },
+        {
+          "value": "vue",
+          "label": "Vue"
+        },
+        {
+          "value": "vue-ts",
+          "label": "Vue + TypeScript"
+        },
+        {
+          "value": "preact",
+          "label": "Preact"
+        },
+        {
+          "value": "preact-ts",
+          "label": "Preact + TypeScript"
+        }
+      ]
+    },
+    {
+      "id": "identifier",
+      "label": "Application identifier",
+      "type": "text",
+      "default": "com.example.app",
+      "help": "A reverse-domain identifier such as com.company.product."
+    }
+  ],
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold Tauri project",
+      "bin": "npx",
+      "cwd": "parentDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "--yes",
+        "create-tauri-app@latest",
+        "${projectName}",
+        "--manager",
+        "${packageManager}",
+        "--template",
+        "${template}",
+        "--identifier",
+        "${identifier}",
+        "--tauri-version",
+        "2",
+        "--yes"
+      ]
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "${packageManager}",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "install"
+      ],
+      "when": "installDeps"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "init"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "add",
+        "--all"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "when": "gitInit"
+    }
+  ]
+}

@@ -1,0 +1,208 @@
+version: "3"
+
+vars:
+  GOLANGCI_LINT_VERSION: 2.11.4
+  WAILS_VERSION: 2.13.0
+  WAILS: go run github.com/wailsapp/wails/v2/cmd/wails@v{{.WAILS_VERSION}}
+  WAILS_MACOS_CGO_LDFLAGS: -mmacosx-version-min=10.13 -framework UniformTypeIdentifiers
+  WAILS_CGO_LDFLAGS: '{{if eq OS "darwin"}}{{.WAILS_MACOS_CGO_LDFLAGS}}{{end}}'
+
+tasks:
+  default:
+    desc: List the available developer tasks
+    cmds:
+      - task --list
+
+  frontend:install:
+    desc: Install the locked frontend dependencies
+    dir: frontend
+    cmds:
+      - pnpm install --frozen-lockfile
+
+  frontend:check:
+    desc: Type-check the Svelte application
+    dir: frontend
+    cmds:
+      - pnpm run check
+
+  frontend:lint:
+    desc: Check frontend formatting and lint rules
+    dir: frontend
+    cmds:
+      - pnpm run lint
+
+  frontend:test:
+    desc: Run frontend unit tests once
+    dir: frontend
+    cmds:
+      - pnpm run test
+
+  frontend:format:
+    desc: Format the frontend
+    dir: frontend
+    cmds:
+      - pnpm run format
+
+  go:test:
+    desc: Run the Go test suite
+    cmds:
+      - go test ./... -count=1
+
+  go:test:race:
+    desc: Run the Go test suite with the race detector
+    cmds:
+      - go test ./... -race -count=1
+
+  go:vet:
+    desc: Run Go static analysis
+    cmds:
+      - go vet ./...
+
+  go:lint:
+    desc: Run the pinned golangci-lint v2 quality gate
+    cmds:
+      - >-
+        go run
+        github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v{{.GOLANGCI_LINT_VERSION}}
+        run ./...
+
+  go:format:
+    desc: Format Go packages
+    cmds:
+      - go fmt ./...
+
+  recipes:validate:
+    desc: Validate every bundled manifest and its resolved golden plan without running generators
+    cmds:
+      - go test ./internal/recipe ./internal/planner -count=1
+
+  recipes:verify:
+    desc: Execute one recipe and its JSON smoke commands (requires RECIPE and SMOKE_JSON)
+    requires:
+      vars:
+        - RECIPE
+        - SMOKE_JSON
+    env:
+      RECIPECHECK_SMOKE_JSON: "{{.SMOKE_JSON}}"
+    cmds:
+      - >-
+        go run ./cmd/recipecheck
+        -manifest recipes/{{.RECIPE}}.json
+        -recipe {{.RECIPE}}
+        -package-manager npm
+
+  recipes:verify:dry:
+    desc: Resolve one recipe and its smoke commands without executing them
+    requires:
+      vars:
+        - RECIPE
+        - SMOKE_JSON
+    env:
+      RECIPECHECK_SMOKE_JSON: "{{.SMOKE_JSON}}"
+    cmds:
+      - >-
+        go run ./cmd/recipecheck
+        -manifest recipes/{{.RECIPE}}.json
+        -recipe {{.RECIPE}}
+        -package-manager npm
+        -dry-run
+
+  bindings:
+    desc: Regenerate the Wails v2 JavaScript and TypeScript bindings
+    env:
+      CGO_LDFLAGS: "{{.WAILS_CGO_LDFLAGS}}"
+    cmds:
+      - "{{.WAILS}} generate module"
+
+  bindings:check:
+    desc: Regenerate bindings and fail when committed output is stale
+    cmds:
+      - task: bindings
+      - git diff --exit-code -- frontend/src/lib/wailsjs
+
+  check:
+    desc: Run the local backend, recipe, and frontend quality gates
+    deps:
+      - frontend:install
+    cmds:
+      - task: go:test
+      - task: go:vet
+      - task: go:lint
+      - task: recipes:validate
+      - task: frontend:check
+      - task: frontend:lint
+      - task: frontend:test
+      - task: bindings:check
+
+  format:
+    desc: Format Go and frontend source
+    cmds:
+      - task: go:format
+      - task: frontend:format
+
+  dev:
+    desc: Start the Wails v2 desktop development server
+    deps:
+      - frontend:install
+      - bindings
+    env:
+      CGO_LDFLAGS: "{{.WAILS_CGO_LDFLAGS}}"
+    cmds:
+      - "{{.WAILS}} dev"
+
+  build:
+    desc: Build Nodesmith for the current platform; pass extra flags after --
+    deps:
+      - frontend:install
+      - bindings
+    env:
+      CGO_LDFLAGS: "{{.WAILS_CGO_LDFLAGS}}"
+    cmds:
+      - "{{.WAILS}} build -clean -trimpath {{.CLI_ARGS}}"
+
+  build:macos-universal:
+    desc: Build the universal macOS application bundle
+    platforms:
+      - darwin
+    deps:
+      - frontend:install
+      - bindings
+    env:
+      CGO_LDFLAGS: "{{.WAILS_MACOS_CGO_LDFLAGS}}"
+    cmds:
+      - "{{.WAILS}} build -clean -trimpath -platform darwin/universal"
+
+  build:linux-amd64:
+    desc: Build the Linux amd64 binary using WebKitGTK 4.0
+    platforms:
+      - linux
+    deps:
+      - frontend:install
+      - bindings
+    cmds:
+      - "{{.WAILS}} build -clean -trimpath -platform linux/amd64"
+
+  build:linux-amd64-webkit41:
+    desc: Build Linux amd64 against WebKitGTK 4.1
+    platforms:
+      - linux
+    deps:
+      - frontend:install
+      - bindings
+    cmds:
+      - "{{.WAILS}} build -clean -trimpath -platform linux/amd64 -tags webkit2_41"
+
+  build:windows-amd64:
+    desc: Build the Windows amd64 executable
+    platforms:
+      - windows
+    deps:
+      - frontend:install
+      - bindings
+    cmds:
+      - "{{.WAILS}} build -clean -trimpath -platform windows/amd64"
+
+  doctor:
+    desc: Print the Wails v2 platform dependency report
+    cmds:
+      - "{{.WAILS}} doctor"

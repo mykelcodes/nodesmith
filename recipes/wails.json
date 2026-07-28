@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "id": "wails",
+  "name": "Wails v2",
+  "category": "desktop",
+  "description": "A native desktop application powered by a Go backend and a web frontend, using Wails v2.",
+  "docsUrl": "https://wails.io/docs/gettingstarted/installation/",
+  "tags": [
+    "desktop",
+    "go",
+    "wails"
+  ],
+  "icon": "wails",
+  "verifiedAt": "2026-07-28",
+  "installPolicy": "required",
+  "requires": {
+    "node": ">=18.0.0",
+    "packageManagers": [
+      "npm"
+    ],
+    "tools": [
+      "go",
+      "wails"
+    ]
+  },
+  "fields": [
+    {
+      "id": "template",
+      "label": "Frontend template",
+      "type": "select",
+      "default": "svelte-ts",
+      "help": "Choose one of the frontend templates bundled with Wails v2.",
+      "options": [
+        {
+          "value": "svelte-ts",
+          "label": "Svelte + TypeScript"
+        },
+        {
+          "value": "react-ts",
+          "label": "React + TypeScript"
+        },
+        {
+          "value": "vue-ts",
+          "label": "Vue + TypeScript"
+        },
+        {
+          "value": "preact-ts",
+          "label": "Preact + TypeScript"
+        },
+        {
+          "value": "lit-ts",
+          "label": "Lit + TypeScript"
+        },
+        {
+          "value": "vanilla-ts",
+          "label": "Vanilla + TypeScript"
+        },
+        {
+          "value": "svelte",
+          "label": "Svelte"
+        },
+        {
+          "value": "react",
+          "label": "React"
+        },
+        {
+          "value": "vue",
+          "label": "Vue"
+        },
+        {
+          "value": "preact",
+          "label": "Preact"
+        },
+        {
+          "value": "lit",
+          "label": "Lit"
+        },
+        {
+          "value": "vanilla",
+          "label": "Vanilla"
+        },
+        {
+          "value": "plain",
+          "label": "Plain HTML, JavaScript, and CSS"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold Wails v2 project",
+      "bin": "wails",
+      "cwd": "parentDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "init",
+        "-n",
+        "${projectName}",
+        "-d",
+        "${projectDir}",
+        "-t",
+        "${template}",
+        "-nocolour",
+        {
+          "if": "gitInit",
+          "then": [
+            "-g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "install",
+      "label": "Install frontend dependencies",
+      "bin": "npm",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "--prefix",
+        "frontend",
+        "install"
+      ],
+      "when": "installDeps"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "add",
+        "--all"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "when": "gitInit"
+    }
+  ]
+}

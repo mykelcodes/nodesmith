@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "id": "solid",
+  "name": "Solid",
+  "category": "frontend",
+  "description": "A Solid single-page application powered by the official Vite starter.",
+  "docsUrl": "https://docs.solidjs.com/",
+  "tags": [
+    "solid",
+    "spa",
+    "vite"
+  ],
+  "icon": "solid",
+  "verifiedAt": "2026-07-28",
+  "requires": {
+    "node": ">=20.19.0",
+    "packageManagers": [
+      "pnpm",
+      "npm",
+      "yarn",
+      "bun"
+    ],
+    "tools": []
+  },
+  "fields": [
+    {
+      "id": "typescript",
+      "label": "TypeScript",
+      "type": "boolean",
+      "default": true,
+      "help": "Generate typed .tsx source files and a TypeScript configuration."
+    }
+  ],
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold Solid project",
+      "bin": "npx",
+      "cwd": "parentDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "--yes",
+        "create-vite@latest",
+        "${projectName}",
+        "--template",
+        {
+          "if": "typescript",
+          "then": [
+            "solid-ts"
+          ],
+          "else": [
+            "solid"
+          ]
+        },
+        "--no-interactive"
+      ]
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "${packageManager}",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "install"
+      ],
+      "when": "installDeps"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "init"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "add",
+        "--all"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "when": "gitInit"
+    }
+  ]
+}

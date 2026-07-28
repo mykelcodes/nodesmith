@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "id": "nestjs",
+  "name": "NestJS",
+  "category": "backend",
+  "description": "A structured Node.js server framework for scalable APIs and services.",
+  "docsUrl": "https://docs.nestjs.com/",
+  "tags": [
+    "api",
+    "backend",
+    "nestjs",
+    "nodejs"
+  ],
+  "icon": "nestjs",
+  "verifiedAt": "2026-07-28",
+  "requires": {
+    "node": ">=20.11.0",
+    "packageManagers": [
+      "pnpm",
+      "npm",
+      "yarn"
+    ],
+    "tools": []
+  },
+  "fields": [
+    {
+      "id": "language",
+      "label": "Language",
+      "type": "select",
+      "default": "typescript",
+      "options": [
+        {
+          "value": "typescript",
+          "label": "TypeScript"
+        },
+        {
+          "value": "javascript",
+          "label": "JavaScript"
+        }
+      ]
+    },
+    {
+      "id": "strict",
+      "label": "Strict TypeScript",
+      "type": "boolean",
+      "default": true,
+      "visibleIf": "language == \"typescript\""
+    }
+  ],
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold NestJS project",
+      "bin": "npx",
+      "cwd": "parentDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "--yes",
+        "@nestjs/cli@latest",
+        "new",
+        "${projectName}",
+        "--package-manager",
+        "${packageManager}",
+        "--language",
+        "${language}",
+        "--skip-install",
+        "--skip-git",
+        {
+          "if": "language == \"typescript\"",
+          "then": [
+            {
+              "if": "strict",
+              "then": [
+                "--strict"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "${packageManager}",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "install"
+      ],
+      "when": "installDeps"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "init"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "add",
+        "--all"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "when": "gitInit"
+    }
+  ]
+}

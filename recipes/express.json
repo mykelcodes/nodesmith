@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "id": "express",
+  "name": "Express",
+  "category": "backend",
+  "description": "A traditional Express web application generated with the official application generator.",
+  "docsUrl": "https://expressjs.com/en/starter/generator.html",
+  "tags": [
+    "backend",
+    "express",
+    "nodejs",
+    "server"
+  ],
+  "icon": "express",
+  "verifiedAt": "2026-07-28",
+  "requires": {
+    "node": ">=18.0.0",
+    "packageManagers": [
+      "pnpm",
+      "npm",
+      "yarn",
+      "bun"
+    ],
+    "tools": []
+  },
+  "fields": [
+    {
+      "id": "view",
+      "label": "View engine",
+      "type": "select",
+      "default": "ejs",
+      "options": [
+        {
+          "value": "ejs",
+          "label": "EJS"
+        },
+        {
+          "value": "pug",
+          "label": "Pug"
+        },
+        {
+          "value": "hbs",
+          "label": "Handlebars"
+        },
+        {
+          "value": "none",
+          "label": "Static HTML"
+        }
+      ]
+    },
+    {
+      "id": "stylesheet",
+      "label": "Stylesheet language",
+      "type": "select",
+      "default": "css",
+      "options": [
+        {
+          "value": "css",
+          "label": "CSS"
+        },
+        {
+          "value": "sass",
+          "label": "Sass"
+        },
+        {
+          "value": "less",
+          "label": "Less"
+        },
+        {
+          "value": "stylus",
+          "label": "Stylus"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold Express project",
+      "bin": "npx",
+      "cwd": "parentDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "--yes",
+        "express-generator@latest",
+        "${projectName}",
+        {
+          "if": "view == \"none\"",
+          "then": [
+            "--no-view"
+          ],
+          "else": [
+            "--view",
+            "${view}"
+          ]
+        },
+        {
+          "if": "stylesheet != \"css\"",
+          "then": [
+            "--css",
+            "${stylesheet}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "${packageManager}",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "install"
+      ],
+      "when": "installDeps"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "init"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "add",
+        "--all"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "when": "gitInit"
+    }
+  ]
+}

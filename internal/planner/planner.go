@@ -1,0 +1,482 @@
+package planner
+
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"path/filepath"
+	"slices"
+	"sort"
+	"strconv"
+	"strings"
+
+	"nodesmith/internal/recipe"
+)
+
+func Resolve(manifest recipe.Manifest, request ScaffoldRequest, resolver BinaryResolver) (Plan, error) {
+	if err := recipe.Validate(manifest); err != nil {
+		return Plan{}, fmt.Errorf("recipe %q is invalid: %w", manifest.ID, err)
+	}
+	if resolver == nil {
+		return Plan{}, fmt.Errorf("resolve recipe %q: binary resolver is nil", manifest.ID)
+	}
+	if request.RecipeID != manifest.ID {
+		return Plan{}, fmt.Errorf("recipe id mismatch: request has %q, manifest has %q", request.RecipeID, manifest.ID)
+	}
+	if len(manifest.Requires.PackageManagers) > 0 &&
+		!slices.Contains(manifest.Requires.PackageManagers, request.PackageManager) {
+		return Plan{}, fmt.Errorf(
+			"package manager %q is not supported by recipe %q",
+			request.PackageManager,
+			manifest.ID,
+		)
+	}
+
+	projectDir := filepath.Join(request.ParentDir, request.ProjectName)
+	values, err := resolveValues(manifest, request, projectDir)
+	if err != nil {
+		return Plan{}, err
+	}
+
+	plan := Plan{
+		RecipeID:   manifest.ID,
+		ProjectDir: projectDir,
+		Steps:      make([]PlanStep, 0, len(manifest.Steps)),
+		Warnings:   []string{},
+	}
+	if manifest.InstallPolicy == recipe.InstallRequired && !request.InstallDeps {
+		plan.Warnings = append(
+			plan.Warnings,
+			"This generator installs dependencies during scaffolding; dependency installation cannot be disabled.",
+		)
+	}
+
+	for _, step := range manifest.Steps {
+		include, err := evaluateWhen(step.When, values)
+		if err != nil {
+			return Plan{}, fmt.Errorf("resolve step %q when: %w", step.ID, err)
+		}
+		if !include {
+			continue
+		}
+
+		binaryName, err := substitute(step.Bin, values)
+		if err != nil {
+			return Plan{}, fmt.Errorf("resolve step %q binary: %w", step.ID, err)
+		}
+		var prefixArgs []string
+		var binaryPath string
+		if commands, ok := resolver.(commandResolver); ok {
+			binaryPath, prefixArgs, err = commands.ResolveCommand(binaryName)
+		} else {
+			binaryPath, err = resolver.Resolve(binaryName)
+		}
+		if err != nil {
+			return Plan{}, fmt.Errorf("resolve step %q binary %q: %w", step.ID, binaryName, err)
+		}
+		if strings.TrimSpace(binaryPath) == "" {
+			return Plan{}, fmt.Errorf("resolve step %q binary %q: resolver returned an empty path", step.ID, binaryName)
+		}
+
+		args, err := expandArgNodes(step.Args, values, 0)
+		if err != nil {
+			return Plan{}, fmt.Errorf("resolve step %q args: %w", step.ID, err)
+		}
+		if len(prefixArgs) > 0 {
+			args = append(append([]string(nil), prefixArgs...), args...)
+		}
+		directory, err := resolveDirectory(step.CWD, request.ParentDir, projectDir)
+		if err != nil {
+			return Plan{}, fmt.Errorf("resolve step %q cwd: %w", step.ID, err)
+		}
+
+		environment := map[string]string{"CI": "1"}
+		keys := make([]string, 0, len(step.Env))
+		for key := range step.Env {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		for _, key := range keys {
+			if strings.EqualFold(key, "CI") || strings.EqualFold(key, "PATH") {
+				continue
+			}
+			environment[key] = step.Env[key]
+		}
+
+		planStep := PlanStep{
+			ID:    step.ID,
+			Label: step.Label,
+			Bin:   binaryPath,
+			Args:  args,
+			Dir:   directory,
+			Env:   environment,
+		}
+		planStep.Display = displayCommand(planStep.Bin, planStep.Args)
+		plan.Steps = append(plan.Steps, planStep)
+	}
+
+	hash, err := hashSteps(plan.Steps)
+	if err != nil {
+		return Plan{}, fmt.Errorf("hash resolved steps: %w", err)
+	}
+	plan.Hash = hash
+	return plan, nil
+}
+
+func resolveValues(manifest recipe.Manifest, request ScaffoldRequest, projectDir string) (map[string]any, error) {
+	fields := make(map[string]recipe.Field, len(manifest.Fields))
+	values := make(map[string]any, len(manifest.Fields)+6)
+	for _, field := range manifest.Fields {
+		fields[field.ID] = field
+		values[field.ID] = cloneValue(field.Default)
+	}
+
+	answerIDs := make([]string, 0, len(request.Answers))
+	for id := range request.Answers {
+		answerIDs = append(answerIDs, id)
+	}
+	sort.Strings(answerIDs)
+	for _, id := range answerIDs {
+		field, exists := fields[id]
+		if !exists {
+			return nil, fmt.Errorf("answers.%s: field does not exist in recipe %q", id, manifest.ID)
+		}
+		value, err := validateAnswer(field, request.Answers[id])
+		if err != nil {
+			return nil, fmt.Errorf("answers.%s: %w", id, err)
+		}
+		values[id] = value
+	}
+
+	values["projectName"] = request.ProjectName
+	values["projectDir"] = projectDir
+	values["parentDir"] = request.ParentDir
+	values["packageManager"] = request.PackageManager
+	values["installDeps"] = request.InstallDeps
+	values["gitInit"] = request.GitInit
+	return values, nil
+}
+
+func validateAnswer(field recipe.Field, value any) (any, error) {
+	switch field.Type {
+	case recipe.FieldSelect:
+		text, ok := value.(string)
+		if !ok {
+			return nil, fmt.Errorf("select answer must be a string, got %T", value)
+		}
+		if !optionExists(field.Options, text) {
+			return nil, fmt.Errorf("select answer %q is not among the available options", text)
+		}
+		return text, nil
+	case recipe.FieldMultiselect:
+		values, ok := answerStringSlice(value)
+		if !ok {
+			return nil, fmt.Errorf("multiselect answer must be an array of strings, got %T", value)
+		}
+		seen := make(map[string]struct{}, len(values))
+		for index, selected := range values {
+			if !optionExists(field.Options, selected) {
+				return nil, fmt.Errorf("multiselect answer at index %d (%q) is not among the available options", index, selected)
+			}
+			if _, duplicate := seen[selected]; duplicate {
+				return nil, fmt.Errorf("multiselect answer contains duplicate value %q", selected)
+			}
+			seen[selected] = struct{}{}
+		}
+		return values, nil
+	case recipe.FieldBoolean:
+		boolean, ok := value.(bool)
+		if !ok {
+			return nil, fmt.Errorf("boolean answer must be true or false, got %T", value)
+		}
+		return boolean, nil
+	case recipe.FieldText:
+		text, ok := value.(string)
+		if !ok {
+			return nil, fmt.Errorf("text answer must be a string, got %T", value)
+		}
+		return text, nil
+	case recipe.FieldNumber:
+		if !isNumber(value) {
+			return nil, fmt.Errorf("number answer must be numeric, got %T", value)
+		}
+		return value, nil
+	default:
+		return nil, fmt.Errorf("unsupported field type %q", field.Type)
+	}
+}
+
+func evaluateWhen(expression string, values map[string]any) (bool, error) {
+	if expression == "" {
+		return true, nil
+	}
+	condition, err := recipe.ParseCondition(expression)
+	if err != nil {
+		return false, err
+	}
+	return condition.Evaluate(values)
+}
+
+func expandArgNodes(nodes []recipe.ArgNode, values map[string]any, depth int) ([]string, error) {
+	args := make([]string, 0, len(nodes))
+	for index, node := range nodes {
+		switch {
+		case node.Literal != nil:
+			value, err := substitute(*node.Literal, values)
+			if err != nil {
+				return nil, fmt.Errorf("args[%d]: %w", index, err)
+			}
+			args = append(args, value)
+		case node.Conditional != nil:
+			nextDepth := depth + 1
+			if nextDepth > 3 {
+				return nil, fmt.Errorf("args[%d]: arg-node nesting depth exceeds 3", index)
+			}
+			condition, err := recipe.ParseCondition(node.Conditional.If)
+			if err != nil {
+				return nil, fmt.Errorf("args[%d].if: %w", index, err)
+			}
+			matches, err := condition.Evaluate(values)
+			if err != nil {
+				return nil, fmt.Errorf("args[%d].if: %w", index, err)
+			}
+			branch := node.Conditional.Else
+			if matches {
+				branch = node.Conditional.Then
+			}
+			expanded, err := expandArgNodes(branch, values, nextDepth)
+			if err != nil {
+				return nil, fmt.Errorf("args[%d]: %w", index, err)
+			}
+			args = append(args, expanded...)
+		case node.Iteration != nil:
+			nextDepth := depth + 1
+			if nextDepth > 3 {
+				return nil, fmt.Errorf("args[%d]: arg-node nesting depth exceeds 3", index)
+			}
+			items, ok := answerStringSlice(values[node.Iteration.Field])
+			if !ok {
+				return nil, fmt.Errorf("args[%d].forEach: %q is not a multiselect value", index, node.Iteration.Field)
+			}
+			for _, item := range items {
+				iterationValues := make(map[string]any, len(values)+1)
+				for key, value := range values {
+					iterationValues[key] = value
+				}
+				iterationValues["item"] = item
+				expanded, err := expandArgNodes(node.Iteration.Args, iterationValues, nextDepth)
+				if err != nil {
+					return nil, fmt.Errorf("args[%d].forEach %q: %w", index, item, err)
+				}
+				args = append(args, expanded...)
+			}
+		default:
+			return nil, fmt.Errorf("args[%d]: arg node has no variant", index)
+		}
+	}
+	return args, nil
+}
+
+func substitute(template string, values map[string]any) (string, error) {
+	var builder strings.Builder
+	remaining := template
+	for {
+		start := strings.Index(remaining, "${")
+		if start < 0 {
+			builder.WriteString(remaining)
+			return builder.String(), nil
+		}
+		builder.WriteString(remaining[:start])
+		closeIndex := strings.IndexByte(remaining[start+2:], '}')
+		if closeIndex < 0 {
+			return "", fmt.Errorf("unterminated variable reference")
+		}
+		closeIndex += start + 2
+		identifier := remaining[start+2 : closeIndex]
+		value, exists := values[identifier]
+		if !exists {
+			return "", fmt.Errorf("unknown identifier %q", identifier)
+		}
+		text, err := stringValue(value)
+		if err != nil {
+			return "", fmt.Errorf("substitute %q: %w", identifier, err)
+		}
+		builder.WriteString(text)
+		remaining = remaining[closeIndex+1:]
+	}
+}
+
+func stringValue(value any) (string, error) {
+	switch typed := value.(type) {
+	case string:
+		return typed, nil
+	case bool:
+		return strconv.FormatBool(typed), nil
+	case json.Number:
+		if _, err := typed.Float64(); err != nil {
+			return "", fmt.Errorf("invalid JSON number %q", typed)
+		}
+		return typed.String(), nil
+	case float64:
+		return strconv.FormatFloat(typed, 'g', -1, 64), nil
+	case float32:
+		return strconv.FormatFloat(float64(typed), 'g', -1, 32), nil
+	case int:
+		return strconv.Itoa(typed), nil
+	case int8:
+		return strconv.FormatInt(int64(typed), 10), nil
+	case int16:
+		return strconv.FormatInt(int64(typed), 10), nil
+	case int32:
+		return strconv.FormatInt(int64(typed), 10), nil
+	case int64:
+		return strconv.FormatInt(typed, 10), nil
+	case uint:
+		return strconv.FormatUint(uint64(typed), 10), nil
+	case uint8:
+		return strconv.FormatUint(uint64(typed), 10), nil
+	case uint16:
+		return strconv.FormatUint(uint64(typed), 10), nil
+	case uint32:
+		return strconv.FormatUint(uint64(typed), 10), nil
+	case uint64:
+		return strconv.FormatUint(typed, 10), nil
+	default:
+		return "", fmt.Errorf("value of type %T cannot be substituted into one argv element", value)
+	}
+}
+
+func resolveDirectory(cwd string, parentDir string, projectDir string) (string, error) {
+	switch cwd {
+	case "parentDir":
+		return parentDir, nil
+	case "projectDir":
+		return projectDir, nil
+	default:
+		return "", fmt.Errorf("unknown cwd %q", cwd)
+	}
+}
+
+func displayCommand(binary string, args []string) string {
+	parts := make([]string, 0, len(args)+1)
+	parts = append(parts, quoteForDisplay(binary))
+	for _, arg := range args {
+		parts = append(parts, quoteForDisplay(arg))
+	}
+	return strings.Join(parts, " ")
+}
+
+func quoteForDisplay(value string) string {
+	if value != "" && displaySafe(value) {
+		return value
+	}
+	return "'" + strings.ReplaceAll(value, "'", "'\"'\"'") + "'"
+}
+
+func displaySafe(value string) bool {
+	for _, character := range value {
+		switch {
+		case character >= 'a' && character <= 'z':
+		case character >= 'A' && character <= 'Z':
+		case character >= '0' && character <= '9':
+		case strings.ContainsRune("_@%+=:,./-", character):
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+type hashEnvironment struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+type hashStep struct {
+	ID      string            `json:"id"`
+	Label   string            `json:"label"`
+	Bin     string            `json:"bin"`
+	Args    []string          `json:"args"`
+	Dir     string            `json:"dir"`
+	Env     []hashEnvironment `json:"env"`
+	Display string            `json:"display"`
+}
+
+func hashSteps(steps []PlanStep) (string, error) {
+	canonical := make([]hashStep, 0, len(steps))
+	for _, step := range steps {
+		keys := make([]string, 0, len(step.Env))
+		for key := range step.Env {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		environment := make([]hashEnvironment, 0, len(keys))
+		for _, key := range keys {
+			environment = append(environment, hashEnvironment{Key: key, Value: step.Env[key]})
+		}
+		canonical = append(canonical, hashStep{
+			ID:      step.ID,
+			Label:   step.Label,
+			Bin:     step.Bin,
+			Args:    slices.Clone(step.Args),
+			Dir:     step.Dir,
+			Env:     environment,
+			Display: step.Display,
+		})
+	}
+	data, err := json.Marshal(canonical)
+	if err != nil {
+		return "", err
+	}
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:]), nil
+}
+
+func optionExists(options []recipe.Option, wanted string) bool {
+	for _, option := range options {
+		if option.Value == wanted {
+			return true
+		}
+	}
+	return false
+}
+
+func answerStringSlice(value any) ([]string, bool) {
+	switch typed := value.(type) {
+	case []string:
+		return slices.Clone(typed), true
+	case []any:
+		values := make([]string, len(typed))
+		for index, item := range typed {
+			text, ok := item.(string)
+			if !ok {
+				return nil, false
+			}
+			values[index] = text
+		}
+		return values, true
+	default:
+		return nil, false
+	}
+}
+
+func isNumber(value any) bool {
+	_, err := stringValue(value)
+	if err != nil {
+		return false
+	}
+	switch value.(type) {
+	case json.Number, float64, float32, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		return true
+	default:
+		return false
+	}
+}
+
+func cloneValue(value any) any {
+	if values, ok := answerStringSlice(value); ok {
+		return values
+	}
+	return value
+}

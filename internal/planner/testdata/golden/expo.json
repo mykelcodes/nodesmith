@@ -1,0 +1,84 @@
+{
+  "recipeId": "expo",
+  "projectDir": "expo-app",
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold Expo project",
+      "bin": "/tools/npx",
+      "args": [
+        "--yes",
+        "create-expo-app@latest",
+        "expo-app",
+        "--template",
+        "default",
+        "--yes",
+        "--no-install",
+        "--no-agents-md"
+      ],
+      "dir": ".",
+      "env": {
+        "CI": "1",
+        "EXPO_NO_TELEMETRY": "1"
+      },
+      "display": "/tools/npx --yes create-expo-app@latest expo-app --template default --yes --no-install --no-agents-md"
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "/tools/pnpm",
+      "args": [
+        "install"
+      ],
+      "dir": "expo-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/pnpm install"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "/tools/git",
+      "args": [
+        "init"
+      ],
+      "dir": "expo-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git init"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "/tools/git",
+      "args": [
+        "add",
+        "--all"
+      ],
+      "dir": "expo-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git add --all"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "/tools/git",
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "dir": "expo-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git commit -m 'Initial commit'"
+    }
+  ],
+  "warnings": [],
+  "hash": "9320ef279013537111c2f5d3f7e14af347b7ed1a08e0dc2572d2e1333a060961"
+}

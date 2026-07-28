@@ -1,0 +1,81 @@
+{
+  "recipeId": "react",
+  "projectDir": "react-app",
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold React project",
+      "bin": "/tools/npx",
+      "args": [
+        "--yes",
+        "create-vite@latest",
+        "react-app",
+        "--template",
+        "react-ts",
+        "--no-interactive"
+      ],
+      "dir": ".",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/npx --yes create-vite@latest react-app --template react-ts --no-interactive"
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "/tools/pnpm",
+      "args": [
+        "install"
+      ],
+      "dir": "react-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/pnpm install"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "/tools/git",
+      "args": [
+        "init"
+      ],
+      "dir": "react-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git init"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "/tools/git",
+      "args": [
+        "add",
+        "--all"
+      ],
+      "dir": "react-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git add --all"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "/tools/git",
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "dir": "react-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git commit -m 'Initial commit'"
+    }
+  ],
+  "warnings": [],
+  "hash": "318356a1825121d5a417b75211220774a3d06135b6f641a641a067d2384495da"
+}

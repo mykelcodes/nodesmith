@@ -3,6 +3,20 @@ import { playwright } from '@vitest/browser-playwright';
 import tailwindcss from '@tailwindcss/vite';
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
+import type { Adapter } from '@sveltejs/kit';
+import { assertWailsStaticBuild } from './scripts/assert-wails-static-build.mjs';
+
+function wailsStaticAdapter(): Adapter {
+	const staticAdapter = adapter();
+
+	return {
+		...staticAdapter,
+		async adapt(builder) {
+			await staticAdapter.adapt(builder);
+			await assertWailsStaticBuild();
+		}
+	};
+}
 
 export default defineConfig({
 	plugins: [
@@ -13,7 +27,10 @@ export default defineConfig({
 				runes: ({ filename }) =>
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
-			adapter: adapter()
+			adapter: wailsStaticAdapter(),
+			router: {
+				type: 'hash'
+			}
 		})
 	],
 	test: {

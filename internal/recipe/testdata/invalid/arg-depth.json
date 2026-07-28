@@ -1,0 +1,2 @@
+{"schemaVersion":1,"id":"basic","name":"Basic","category":"tooling","description":"Test.","docsUrl":"https://example.com","tags":[],"icon":"basic","verifiedAt":"2026-07-28","requires":{"node":">=20.0.0","packageManagers":["npm"],"tools":[]},"fields":[{"id":"flag","label":"Flag","type":"boolean","default":true}],"steps":[{"id":"run","label":"Run","bin":"npx","cwd":"parentDir","env":{"CI":"1"},"args":[{"if":"flag","then":[{"if":"flag","then":[{"if":"flag","then":[{"if":"flag","then":["too-deep"]}]}]}]}]}]}
+

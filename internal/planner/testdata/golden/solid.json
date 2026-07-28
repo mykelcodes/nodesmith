@@ -1,0 +1,81 @@
+{
+  "recipeId": "solid",
+  "projectDir": "solid-app",
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold Solid project",
+      "bin": "/tools/npx",
+      "args": [
+        "--yes",
+        "create-vite@latest",
+        "solid-app",
+        "--template",
+        "solid-ts",
+        "--no-interactive"
+      ],
+      "dir": ".",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/npx --yes create-vite@latest solid-app --template solid-ts --no-interactive"
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "/tools/pnpm",
+      "args": [
+        "install"
+      ],
+      "dir": "solid-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/pnpm install"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "/tools/git",
+      "args": [
+        "init"
+      ],
+      "dir": "solid-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git init"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "/tools/git",
+      "args": [
+        "add",
+        "--all"
+      ],
+      "dir": "solid-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git add --all"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "/tools/git",
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "dir": "solid-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git commit -m 'Initial commit'"
+    }
+  ],
+  "warnings": [],
+  "hash": "470d14920e907586cb1dc00020e775208d76f91a3b85e7654d3cb850161f9577"
+}

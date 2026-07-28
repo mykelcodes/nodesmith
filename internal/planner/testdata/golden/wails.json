@@ -1,0 +1,73 @@
+{
+  "recipeId": "wails",
+  "projectDir": "wails-app",
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold Wails v2 project",
+      "bin": "/tools/wails",
+      "args": [
+        "init",
+        "-n",
+        "wails-app",
+        "-d",
+        "wails-app",
+        "-t",
+        "svelte-ts",
+        "-nocolour",
+        "-g"
+      ],
+      "dir": ".",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/wails init -n wails-app -d wails-app -t svelte-ts -nocolour -g"
+    },
+    {
+      "id": "install",
+      "label": "Install frontend dependencies",
+      "bin": "/tools/npm",
+      "args": [
+        "--prefix",
+        "frontend",
+        "install"
+      ],
+      "dir": "wails-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/npm --prefix frontend install"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "/tools/git",
+      "args": [
+        "add",
+        "--all"
+      ],
+      "dir": "wails-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git add --all"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "/tools/git",
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "dir": "wails-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git commit -m 'Initial commit'"
+    }
+  ],
+  "warnings": [],
+  "hash": "66fdca57af9245e87ec3cdd974632825bda61c4d7fa5d1dc4b28bd3bd639d117"
+}

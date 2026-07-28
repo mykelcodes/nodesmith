@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "id": "sveltekit",
+  "name": "SvelteKit",
+  "category": "fullstack",
+  "description": "A full-stack Svelte application with routing, server rendering, and adapters.",
+  "docsUrl": "https://svelte.dev/docs/kit/introduction",
+  "tags": [
+    "fullstack",
+    "ssr",
+    "svelte"
+  ],
+  "icon": "sveltekit",
+  "verifiedAt": "2026-07-28",
+  "requires": {
+    "node": ">=20.19.0",
+    "packageManagers": [
+      "pnpm",
+      "npm",
+      "yarn",
+      "bun"
+    ],
+    "tools": []
+  },
+  "fields": [
+    {
+      "id": "template",
+      "label": "Template",
+      "type": "select",
+      "default": "minimal",
+      "help": "Choose the official starting point for the application.",
+      "options": [
+        {
+          "value": "minimal",
+          "label": "Minimal app"
+        },
+        {
+          "value": "demo",
+          "label": "Demo app"
+        },
+        {
+          "value": "library",
+          "label": "Svelte library"
+        }
+      ]
+    },
+    {
+      "id": "type-checking",
+      "label": "Type checking",
+      "type": "select",
+      "default": "ts",
+      "help": "Use TypeScript, JavaScript with JSDoc checking, or no type checking.",
+      "options": [
+        {
+          "value": "ts",
+          "label": "TypeScript"
+        },
+        {
+          "value": "jsdoc",
+          "label": "JavaScript with JSDoc"
+        },
+        {
+          "value": "none",
+          "label": "None"
+        }
+      ]
+    },
+    {
+      "id": "addons",
+      "label": "Add-ons",
+      "type": "multiselect",
+      "default": [],
+      "help": "Configure official add-ons during scaffolding without opening prompts.",
+      "options": [
+        {
+          "value": "tailwindcss=plugins:none",
+          "label": "Tailwind CSS"
+        },
+        {
+          "value": "eslint",
+          "label": "ESLint"
+        },
+        {
+          "value": "prettier",
+          "label": "Prettier"
+        },
+        {
+          "value": "vitest=usages:unit",
+          "label": "Vitest (unit tests)"
+        }
+      ],
+      "visibleIf": "template != \"library\""
+    }
+  ],
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold SvelteKit project",
+      "bin": "npx",
+      "cwd": "parentDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "--yes",
+        "sv@latest",
+        "create",
+        "${projectName}",
+        "--template",
+        "${template}",
+        {
+          "if": "type-checking == \"none\"",
+          "then": [
+            "--no-types"
+          ],
+          "else": [
+            "--types",
+            "${type-checking}"
+          ]
+        },
+        {
+          "if": "addons",
+          "then": [
+            "--add",
+            {
+              "forEach": "addons",
+              "args": [
+                "${item}"
+              ]
+            }
+          ],
+          "else": [
+            "--no-add-ons"
+          ]
+        },
+        "--no-install",
+        "--no-download-check"
+      ]
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "${packageManager}",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "install"
+      ],
+      "when": "installDeps"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "init"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "add",
+        "--all"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "when": "gitInit"
+    }
+  ]
+}

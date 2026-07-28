@@ -1,0 +1,86 @@
+{
+  "recipeId": "sveltekit",
+  "projectDir": "sveltekit-app",
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold SvelteKit project",
+      "bin": "/tools/npx",
+      "args": [
+        "--yes",
+        "sv@latest",
+        "create",
+        "sveltekit-app",
+        "--template",
+        "minimal",
+        "--types",
+        "ts",
+        "--no-add-ons",
+        "--no-install",
+        "--no-download-check"
+      ],
+      "dir": ".",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/npx --yes sv@latest create sveltekit-app --template minimal --types ts --no-add-ons --no-install --no-download-check"
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "/tools/pnpm",
+      "args": [
+        "install"
+      ],
+      "dir": "sveltekit-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/pnpm install"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "/tools/git",
+      "args": [
+        "init"
+      ],
+      "dir": "sveltekit-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git init"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "/tools/git",
+      "args": [
+        "add",
+        "--all"
+      ],
+      "dir": "sveltekit-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git add --all"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "/tools/git",
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "dir": "sveltekit-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git commit -m 'Initial commit'"
+    }
+  ],
+  "warnings": [],
+  "hash": "83c8c39b3ca89320a7cc87837e087efce4df71d367cece64a736e315ab437595"
+}

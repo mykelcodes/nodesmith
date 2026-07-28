@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "id": "expo",
+  "name": "Expo",
+  "category": "mobile",
+  "description": "A universal React Native application for Android, iOS, and the web.",
+  "docsUrl": "https://docs.expo.dev/",
+  "tags": [
+    "android",
+    "expo",
+    "ios",
+    "react-native"
+  ],
+  "icon": "expo",
+  "verifiedAt": "2026-07-28",
+  "requires": {
+    "node": ">=18.13.0",
+    "packageManagers": [
+      "pnpm",
+      "npm",
+      "yarn",
+      "bun"
+    ],
+    "tools": []
+  },
+  "fields": [
+    {
+      "id": "template",
+      "label": "Template",
+      "type": "select",
+      "default": "default",
+      "options": [
+        {
+          "value": "default",
+          "label": "Default"
+        },
+        {
+          "value": "blank",
+          "label": "Blank JavaScript"
+        },
+        {
+          "value": "blank-typescript",
+          "label": "Blank TypeScript"
+        },
+        {
+          "value": "tabs",
+          "label": "Tabs"
+        },
+        {
+          "value": "bare-minimum",
+          "label": "Bare minimum"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold Expo project",
+      "bin": "npx",
+      "cwd": "parentDir",
+      "env": {
+        "CI": "1",
+        "EXPO_NO_TELEMETRY": "1"
+      },
+      "args": [
+        "--yes",
+        "create-expo-app@latest",
+        "${projectName}",
+        "--template",
+        "${template}",
+        "--yes",
+        "--no-install",
+        "--no-agents-md"
+      ]
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "${packageManager}",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "install"
+      ],
+      "when": "installDeps"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "init"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "add",
+        "--all"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "when": "gitInit"
+    }
+  ]
+}

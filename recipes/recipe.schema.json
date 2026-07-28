@@ -1,0 +1,297 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nodesmith.app/schemas/recipe-v1.json",
+  "title": "Nodesmith recipe manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "name",
+    "category",
+    "description",
+    "docsUrl",
+    "tags",
+    "icon",
+    "verifiedAt",
+    "requires",
+    "fields",
+    "steps"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "$ref": "#/$defs/id"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "category": {
+      "enum": [
+        "frontend",
+        "fullstack",
+        "backend",
+        "desktop",
+        "mobile",
+        "tooling"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "docsUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/id"
+      },
+      "uniqueItems": true
+    },
+    "icon": {
+      "type": "string",
+      "minLength": 1
+    },
+    "verifiedAt": {
+      "type": "string",
+      "format": "date"
+    },
+    "installPolicy": {
+      "enum": [
+        "optional",
+        "required"
+      ]
+    },
+    "requires": {
+      "$ref": "#/$defs/requires"
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/field"
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/step"
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "requires": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "packageManagers",
+        "tools"
+      ],
+      "properties": {
+        "node": {
+          "type": "string",
+          "minLength": 1
+        },
+        "packageManagers": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "pnpm",
+              "npm",
+              "yarn",
+              "bun"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "label"
+      ],
+      "properties": {
+        "value": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "type",
+        "default"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "enum": [
+            "select",
+            "multiselect",
+            "boolean",
+            "text",
+            "number"
+          ]
+        },
+        "default": {},
+        "help": {
+          "type": "string"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/option"
+          }
+        },
+        "visibleIf": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "bin",
+        "cwd",
+        "env",
+        "args"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bin": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cwd": {
+          "enum": [
+            "parentDir",
+            "projectDir"
+          ]
+        },
+        "env": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^(?![Pp][Aa][Tt][Hh]$)[^=\\u0000]+$"
+          },
+          "properties": {
+            "CI": {
+              "const": "1"
+            }
+          },
+          "additionalProperties": {
+            "type": "string"
+          },
+          "required": [
+            "CI"
+          ]
+        },
+        "args": {
+          "$ref": "#/$defs/argNodes"
+        },
+        "when": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "argNodes": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "$ref": "#/$defs/conditionalArg"
+          },
+          {
+            "$ref": "#/$defs/forEachArg"
+          }
+        ]
+      }
+    },
+    "conditionalArg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "if",
+        "then"
+      ],
+      "properties": {
+        "if": {
+          "type": "string",
+          "minLength": 1
+        },
+        "then": {
+          "$ref": "#/$defs/argNodes"
+        },
+        "else": {
+          "$ref": "#/$defs/argNodes"
+        }
+      }
+    },
+    "forEachArg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "forEach",
+        "args"
+      ],
+      "properties": {
+        "forEach": {
+          "$ref": "#/$defs/id"
+        },
+        "args": {
+          "$ref": "#/$defs/argNodes"
+        }
+      }
+    }
+  }
+}

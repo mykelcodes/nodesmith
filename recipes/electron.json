@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "id": "electron",
+  "name": "Electron",
+  "category": "desktop",
+  "description": "A cross-platform Electron Forge desktop application powered by Vite.",
+  "docsUrl": "https://www.electronforge.io/",
+  "tags": [
+    "desktop",
+    "electron",
+    "vite"
+  ],
+  "icon": "electron",
+  "verifiedAt": "2026-07-28",
+  "installPolicy": "required",
+  "requires": {
+    "node": ">=20.0.0",
+    "packageManagers": [
+      "npm"
+    ],
+    "tools": []
+  },
+  "fields": [
+    {
+      "id": "typescript",
+      "label": "TypeScript",
+      "type": "boolean",
+      "default": true
+    }
+  ],
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold Electron project",
+      "bin": "npx",
+      "cwd": "parentDir",
+      "env": {
+        "CI": "1",
+        "NODE_INSTALLER": "npm"
+      },
+      "args": [
+        "--yes",
+        "create-electron-app@latest",
+        "${projectName}",
+        "--template",
+        {
+          "if": "typescript",
+          "then": [
+            "vite-typescript"
+          ],
+          "else": [
+            "vite"
+          ]
+        },
+        "--skip-git",
+        "--electron-version",
+        "latest"
+      ]
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "init"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "add",
+        "--all"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "when": "gitInit"
+    }
+  ]
+}

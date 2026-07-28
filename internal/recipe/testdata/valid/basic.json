@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "basic",
+  "name": "Basic",
+  "category": "tooling",
+  "description": "A valid test recipe.",
+  "docsUrl": "https://example.com/basic",
+  "tags": ["test"],
+  "icon": "basic",
+  "verifiedAt": "2026-07-28",
+  "requires": {
+    "node": ">=20.0.0",
+    "packageManagers": ["npm"],
+    "tools": []
+  },
+  "fields": [
+    {
+      "id": "choice",
+      "label": "Choice",
+      "type": "select",
+      "default": "a",
+      "options": [
+        {"value": "a", "label": "A"},
+        {"value": "b", "label": "B"}
+      ]
+    },
+    {
+      "id": "items",
+      "label": "Items",
+      "type": "multiselect",
+      "default": [],
+      "options": [
+        {"value": "x", "label": "X"}
+      ],
+      "visibleIf": "choice != \"b\""
+    },
+    {
+      "id": "flag",
+      "label": "Flag",
+      "type": "boolean",
+      "default": true
+    }
+  ],
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold",
+      "bin": "npx",
+      "cwd": "parentDir",
+      "env": {"CI": "1"},
+      "args": [
+        "create",
+        "${projectName}",
+        {"if": "flag", "then": ["--flag"], "else": []},
+        {"forEach": "items", "args": ["--item", "${item}"]}
+      ],
+      "when": "installDeps == true"
+    }
+  ]
+}
+

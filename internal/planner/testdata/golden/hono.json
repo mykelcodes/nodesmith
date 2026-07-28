@@ -1,0 +1,82 @@
+{
+  "recipeId": "hono",
+  "projectDir": "hono-app",
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold Hono project",
+      "bin": "/tools/npx",
+      "args": [
+        "--yes",
+        "create-hono@latest",
+        "hono-app",
+        "--template",
+        "nodejs",
+        "--pm",
+        "pnpm"
+      ],
+      "dir": ".",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/npx --yes create-hono@latest hono-app --template nodejs --pm pnpm"
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "/tools/pnpm",
+      "args": [
+        "install"
+      ],
+      "dir": "hono-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/pnpm install"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "/tools/git",
+      "args": [
+        "init"
+      ],
+      "dir": "hono-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git init"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "/tools/git",
+      "args": [
+        "add",
+        "--all"
+      ],
+      "dir": "hono-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git add --all"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "/tools/git",
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "dir": "hono-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git commit -m 'Initial commit'"
+    }
+  ],
+  "warnings": [],
+  "hash": "23c6cdf3e2e0539ec15e694f134595cd45f1243ec75ba6d4da0ca63bc36d131d"
+}

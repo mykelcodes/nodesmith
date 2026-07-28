@@ -1,0 +1,71 @@
+{
+  "recipeId": "electron",
+  "projectDir": "electron-app",
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold Electron project",
+      "bin": "/tools/npx",
+      "args": [
+        "--yes",
+        "create-electron-app@latest",
+        "electron-app",
+        "--template",
+        "vite-typescript",
+        "--skip-git",
+        "--electron-version",
+        "latest"
+      ],
+      "dir": ".",
+      "env": {
+        "CI": "1",
+        "NODE_INSTALLER": "npm"
+      },
+      "display": "/tools/npx --yes create-electron-app@latest electron-app --template vite-typescript --skip-git --electron-version latest"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "/tools/git",
+      "args": [
+        "init"
+      ],
+      "dir": "electron-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git init"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "/tools/git",
+      "args": [
+        "add",
+        "--all"
+      ],
+      "dir": "electron-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git add --all"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "/tools/git",
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "dir": "electron-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git commit -m 'Initial commit'"
+    }
+  ],
+  "warnings": [],
+  "hash": "ca575680c53047d6e75170df0061627a86af67aa51a24d33607e0b54a284a312"
+}

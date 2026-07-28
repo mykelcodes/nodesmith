@@ -1,0 +1,86 @@
+{
+  "recipeId": "nestjs",
+  "projectDir": "nestjs-app",
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold NestJS project",
+      "bin": "/tools/npx",
+      "args": [
+        "--yes",
+        "@nestjs/cli@latest",
+        "new",
+        "nestjs-app",
+        "--package-manager",
+        "pnpm",
+        "--language",
+        "typescript",
+        "--skip-install",
+        "--skip-git",
+        "--strict"
+      ],
+      "dir": ".",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/npx --yes @nestjs/cli@latest new nestjs-app --package-manager pnpm --language typescript --skip-install --skip-git --strict"
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "/tools/pnpm",
+      "args": [
+        "install"
+      ],
+      "dir": "nestjs-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/pnpm install"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "/tools/git",
+      "args": [
+        "init"
+      ],
+      "dir": "nestjs-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git init"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "/tools/git",
+      "args": [
+        "add",
+        "--all"
+      ],
+      "dir": "nestjs-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git add --all"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "/tools/git",
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "dir": "nestjs-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git commit -m 'Initial commit'"
+    }
+  ],
+  "warnings": [],
+  "hash": "5f3b61b417f8f5e2d53e472fdd4c7a7059c53c9cd0533fb41352e783f58a2f4d"
+}

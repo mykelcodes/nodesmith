@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "id": "hono",
+  "name": "Hono",
+  "category": "backend",
+  "description": "A small, fast web framework with starters for Node.js, serverless, and edge runtimes.",
+  "docsUrl": "https://hono.dev/docs/",
+  "tags": [
+    "api",
+    "backend",
+    "edge",
+    "hono"
+  ],
+  "icon": "hono",
+  "verifiedAt": "2026-07-28",
+  "requires": {
+    "node": ">=18.0.0",
+    "packageManagers": [
+      "pnpm",
+      "npm",
+      "yarn",
+      "bun"
+    ],
+    "tools": []
+  },
+  "fields": [
+    {
+      "id": "template",
+      "label": "Runtime template",
+      "type": "select",
+      "default": "nodejs",
+      "options": [
+        {
+          "value": "nodejs",
+          "label": "Node.js"
+        },
+        {
+          "value": "cloudflare-workers",
+          "label": "Cloudflare Workers"
+        },
+        {
+          "value": "cloudflare-workers+vite",
+          "label": "Cloudflare Workers + Vite"
+        },
+        {
+          "value": "aws-lambda",
+          "label": "AWS Lambda"
+        },
+        {
+          "value": "vercel",
+          "label": "Vercel"
+        },
+        {
+          "value": "netlify",
+          "label": "Netlify"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold Hono project",
+      "bin": "npx",
+      "cwd": "parentDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "--yes",
+        "create-hono@latest",
+        "${projectName}",
+        "--template",
+        "${template}",
+        "--pm",
+        "${packageManager}"
+      ]
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "${packageManager}",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "install"
+      ],
+      "when": "installDeps"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "init"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "add",
+        "--all"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "when": "gitInit"
+    }
+  ]
+}

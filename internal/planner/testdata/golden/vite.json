@@ -1,0 +1,82 @@
+{
+  "recipeId": "vite",
+  "projectDir": "vite-app",
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold project",
+      "bin": "/tools/npx",
+      "args": [
+        "--yes",
+        "create-vite@latest",
+        "vite-app",
+        "--template",
+        "vanilla-ts",
+        "--no-interactive",
+        "--no-immediate"
+      ],
+      "dir": ".",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/npx --yes create-vite@latest vite-app --template vanilla-ts --no-interactive --no-immediate"
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "/tools/pnpm",
+      "args": [
+        "install"
+      ],
+      "dir": "vite-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/pnpm install"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "/tools/git",
+      "args": [
+        "init"
+      ],
+      "dir": "vite-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git init"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "/tools/git",
+      "args": [
+        "add",
+        "--all"
+      ],
+      "dir": "vite-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git add --all"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "/tools/git",
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "dir": "vite-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git commit -m 'Initial commit'"
+    }
+  ],
+  "warnings": [],
+  "hash": "be1ee8c002e42a02b3f654a0985d0b1c2458c022c53ff20d972a55a53c2ab8b3"
+}

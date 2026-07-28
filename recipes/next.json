@@ -1,0 +1,257 @@
+{
+  "schemaVersion": 1,
+  "id": "next",
+  "name": "Next.js",
+  "category": "fullstack",
+  "description": "A production-ready React framework with server rendering and file-based routing.",
+  "docsUrl": "https://nextjs.org/docs",
+  "tags": [
+    "fullstack",
+    "nextjs",
+    "react",
+    "ssr"
+  ],
+  "icon": "next",
+  "verifiedAt": "2026-07-28",
+  "requires": {
+    "node": ">=20.9.0",
+    "packageManagers": [
+      "pnpm",
+      "npm",
+      "yarn",
+      "bun"
+    ],
+    "tools": []
+  },
+  "fields": [
+    {
+      "id": "typescript",
+      "label": "TypeScript",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "id": "linter",
+      "label": "Linter",
+      "type": "select",
+      "default": "eslint",
+      "options": [
+        {
+          "value": "eslint",
+          "label": "ESLint"
+        },
+        {
+          "value": "biome",
+          "label": "Biome"
+        },
+        {
+          "value": "none",
+          "label": "None"
+        }
+      ]
+    },
+    {
+      "id": "tailwind",
+      "label": "Tailwind CSS",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "id": "react-compiler",
+      "label": "React Compiler",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "id": "app-router",
+      "label": "App Router",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "id": "src-dir",
+      "label": "Use src/ directory",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "id": "agents-md",
+      "label": "Generate AGENTS.md",
+      "type": "boolean",
+      "default": false,
+      "help": "Add the framework-maintained instructions file for coding agents."
+    }
+  ],
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold Next.js project",
+      "bin": "npx",
+      "cwd": "parentDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "--yes",
+        "create-next-app@latest",
+        "${projectName}",
+        {
+          "if": "typescript",
+          "then": [
+            "--ts"
+          ],
+          "else": [
+            "--js"
+          ]
+        },
+        {
+          "if": "linter == \"eslint\"",
+          "then": [
+            "--eslint"
+          ],
+          "else": [
+            {
+              "if": "linter == \"biome\"",
+              "then": [
+                "--biome"
+              ],
+              "else": [
+                "--no-eslint"
+              ]
+            }
+          ]
+        },
+        {
+          "if": "tailwind",
+          "then": [
+            "--tailwind"
+          ],
+          "else": [
+            "--no-tailwind"
+          ]
+        },
+        {
+          "if": "react-compiler",
+          "then": [
+            "--react-compiler"
+          ],
+          "else": [
+            "--no-react-compiler"
+          ]
+        },
+        {
+          "if": "app-router",
+          "then": [
+            "--app"
+          ],
+          "else": [
+            "--no-app"
+          ]
+        },
+        {
+          "if": "src-dir",
+          "then": [
+            "--src-dir"
+          ],
+          "else": [
+            "--no-src-dir"
+          ]
+        },
+        {
+          "if": "agents-md",
+          "then": [
+            "--agents-md"
+          ],
+          "else": [
+            "--no-agents-md"
+          ]
+        },
+        {
+          "if": "packageManager == \"npm\"",
+          "then": [
+            "--use-npm"
+          ],
+          "else": [
+            {
+              "if": "packageManager == \"pnpm\"",
+              "then": [
+                "--use-pnpm"
+              ],
+              "else": [
+                {
+                  "if": "packageManager == \"yarn\"",
+                  "then": [
+                    "--use-yarn"
+                  ],
+                  "else": [
+                    "--use-bun"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "--import-alias",
+        "@/*",
+        "--skip-install",
+        "--disable-git",
+        "--yes"
+      ]
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "${packageManager}",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "install"
+      ],
+      "when": "installDeps"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "init"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "add",
+        "--all"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "when": "gitInit"
+    }
+  ]
+}

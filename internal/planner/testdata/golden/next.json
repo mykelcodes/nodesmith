@@ -1,0 +1,91 @@
+{
+  "recipeId": "next",
+  "projectDir": "next-app",
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold Next.js project",
+      "bin": "/tools/npx",
+      "args": [
+        "--yes",
+        "create-next-app@latest",
+        "next-app",
+        "--ts",
+        "--eslint",
+        "--tailwind",
+        "--no-react-compiler",
+        "--app",
+        "--src-dir",
+        "--no-agents-md",
+        "--use-pnpm",
+        "--import-alias",
+        "@/*",
+        "--skip-install",
+        "--disable-git",
+        "--yes"
+      ],
+      "dir": ".",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/npx --yes create-next-app@latest next-app --ts --eslint --tailwind --no-react-compiler --app --src-dir --no-agents-md --use-pnpm --import-alias '@/*' --skip-install --disable-git --yes"
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "/tools/pnpm",
+      "args": [
+        "install"
+      ],
+      "dir": "next-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/pnpm install"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "/tools/git",
+      "args": [
+        "init"
+      ],
+      "dir": "next-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git init"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "/tools/git",
+      "args": [
+        "add",
+        "--all"
+      ],
+      "dir": "next-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git add --all"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "/tools/git",
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "dir": "next-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git commit -m 'Initial commit'"
+    }
+  ],
+  "warnings": [],
+  "hash": "669bfcc45fcb090a32660cc53cf742850e31e943fcdfe14fdadf9c7aac52aa3c"
+}

@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "id": "vite",
+  "name": "Vite",
+  "category": "tooling",
+  "description": "A fast, modern frontend project powered by an official Vite starter template.",
+  "docsUrl": "https://vite.dev/guide/",
+  "tags": [
+    "frontend",
+    "vite"
+  ],
+  "icon": "vite",
+  "verifiedAt": "2026-07-28",
+  "requires": {
+    "node": ">=20.19.0",
+    "packageManagers": [
+      "pnpm",
+      "npm",
+      "yarn",
+      "bun"
+    ],
+    "tools": []
+  },
+  "fields": [
+    {
+      "id": "template",
+      "label": "Template",
+      "type": "select",
+      "default": "vanilla-ts",
+      "help": "Choose one of the starter templates maintained by Vite.",
+      "options": [
+        {
+          "value": "vanilla",
+          "label": "Vanilla JavaScript"
+        },
+        {
+          "value": "vanilla-ts",
+          "label": "Vanilla TypeScript"
+        },
+        {
+          "value": "vue",
+          "label": "Vue"
+        },
+        {
+          "value": "vue-ts",
+          "label": "Vue + TypeScript"
+        },
+        {
+          "value": "react",
+          "label": "React"
+        },
+        {
+          "value": "react-ts",
+          "label": "React + TypeScript"
+        },
+        {
+          "value": "react-compiler",
+          "label": "React Compiler"
+        },
+        {
+          "value": "react-compiler-ts",
+          "label": "React Compiler + TypeScript"
+        },
+        {
+          "value": "preact",
+          "label": "Preact"
+        },
+        {
+          "value": "preact-ts",
+          "label": "Preact + TypeScript"
+        },
+        {
+          "value": "lit",
+          "label": "Lit"
+        },
+        {
+          "value": "lit-ts",
+          "label": "Lit + TypeScript"
+        },
+        {
+          "value": "svelte",
+          "label": "Svelte"
+        },
+        {
+          "value": "svelte-ts",
+          "label": "Svelte + TypeScript"
+        },
+        {
+          "value": "solid",
+          "label": "Solid"
+        },
+        {
+          "value": "solid-ts",
+          "label": "Solid + TypeScript"
+        },
+        {
+          "value": "qwik",
+          "label": "Qwik"
+        },
+        {
+          "value": "qwik-ts",
+          "label": "Qwik + TypeScript"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold project",
+      "bin": "npx",
+      "cwd": "parentDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "--yes",
+        "create-vite@latest",
+        "${projectName}",
+        "--template",
+        "${template}",
+        "--no-interactive",
+        "--no-immediate"
+      ]
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "${packageManager}",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "install"
+      ],
+      "when": "installDeps"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "init"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "add",
+        "--all"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "when": "gitInit"
+    }
+  ]
+}

@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "id": "astro",
+  "name": "Astro",
+  "category": "fullstack",
+  "description": "A content-focused web framework with islands, server rendering, and static output.",
+  "docsUrl": "https://docs.astro.build/",
+  "tags": [
+    "astro",
+    "content",
+    "ssg",
+    "ssr"
+  ],
+  "icon": "astro",
+  "verifiedAt": "2026-07-28",
+  "requires": {
+    "node": ">=22.12.0",
+    "packageManagers": [
+      "pnpm",
+      "npm",
+      "yarn",
+      "bun"
+    ],
+    "tools": []
+  },
+  "fields": [
+    {
+      "id": "template",
+      "label": "Template",
+      "type": "select",
+      "default": "minimal",
+      "help": "Choose an official Astro example as the starting point.",
+      "options": [
+        {
+          "value": "minimal",
+          "label": "Minimal"
+        },
+        {
+          "value": "blog",
+          "label": "Blog"
+        },
+        {
+          "value": "portfolio",
+          "label": "Portfolio"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold Astro project",
+      "bin": "npx",
+      "cwd": "parentDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "--yes",
+        "create-astro@latest",
+        "${projectName}",
+        "--template",
+        "${template}",
+        "--yes",
+        "--no-install",
+        "--no-git",
+        "--no-ai",
+        "--skip-houston"
+      ]
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "${packageManager}",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "install"
+      ],
+      "when": "installDeps"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "init"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "add",
+        "--all"
+      ],
+      "when": "gitInit"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "git",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "when": "gitInit"
+    }
+  ]
+}

@@ -1,0 +1,186 @@
+name: CI
+
+"on":
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go-lint:
+    name: Go lint
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Install Linux desktop build dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            build-essential \
+            libgtk-3-dev \
+            libwebkit2gtk-4.0-dev \
+            pkg-config
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.11.4
+          args: ./...
+
+  test-and-build:
+    name: Test and build (${{ matrix.label }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: macOS universal
+            os: macos-15
+            platform: darwin/universal
+            artifact: darwin-universal
+            cgo_ldflags: -mmacosx-version-min=10.13 -framework UniformTypeIdentifiers
+          - label: Windows amd64
+            os: windows-2022
+            platform: windows/amd64
+            artifact: windows-amd64
+            cgo_ldflags: ""
+          - label: Linux amd64
+            os: ubuntu-22.04
+            platform: linux/amd64
+            artifact: linux-amd64
+            cgo_ldflags: ""
+
+    env:
+      CGO_LDFLAGS: ${{ matrix.cgo_ldflags }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Install Linux desktop build dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            build-essential \
+            libgtk-3-dev \
+            libwebkit2gtk-4.0-dev \
+            pkg-config
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.6.0
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install Wails v2.13.0
+        shell: bash
+        run: |
+          go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Verify Wails CLI
+        shell: bash
+        run: wails version
+
+      - name: Install frontend dependencies
+        shell: bash
+        run: pnpm --dir frontend install --frozen-lockfile
+
+      - name: Install Chromium and Linux browser dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: pnpm --dir frontend exec playwright install --with-deps chromium
+
+      - name: Install Chromium
+        if: runner.os != 'Linux'
+        shell: bash
+        run: pnpm --dir frontend exec playwright install chromium
+
+      - name: Test Go packages
+        shell: bash
+        run: go test ./... -count=1
+
+      - name: Run Go race tests
+        if: runner.os == 'Linux'
+        shell: bash
+        run: go test ./... -race -count=1
+
+      - name: Vet Go packages
+        shell: bash
+        run: go vet ./...
+
+      - name: Type-check frontend
+        shell: bash
+        run: pnpm --dir frontend run check
+
+      - name: Lint frontend
+        shell: bash
+        run: pnpm --dir frontend run lint
+
+      - name: Test frontend
+        shell: bash
+        run: pnpm --dir frontend run test
+
+      - name: Verify generated bindings
+        shell: bash
+        run: |
+          wails generate module
+          git diff --exit-code -- frontend/src/lib/wailsjs
+
+      - name: Build desktop application
+        shell: bash
+        run: wails build -clean -trimpath -platform "${{ matrix.platform }}"
+
+      - name: Upload commit desktop artifact
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v7
+        with:
+          name: nodesmith-${{ matrix.artifact }}-${{ github.sha }}
+          path: build/bin/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload versioned tag desktop artifact
+        if: github.ref_type == 'tag'
+        uses: actions/upload-artifact@v7
+        with:
+          name: nodesmith-${{ github.ref_name }}-${{ matrix.artifact }}
+          path: build/bin/
+          if-no-files-found: error
+          retention-days: 90

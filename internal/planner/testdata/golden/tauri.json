@@ -1,0 +1,87 @@
+{
+  "recipeId": "tauri",
+  "projectDir": "tauri-app",
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold Tauri project",
+      "bin": "/tools/npx",
+      "args": [
+        "--yes",
+        "create-tauri-app@latest",
+        "tauri-app",
+        "--manager",
+        "pnpm",
+        "--template",
+        "svelte-ts",
+        "--identifier",
+        "com.example.app",
+        "--tauri-version",
+        "2",
+        "--yes"
+      ],
+      "dir": ".",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/npx --yes create-tauri-app@latest tauri-app --manager pnpm --template svelte-ts --identifier com.example.app --tauri-version 2 --yes"
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "/tools/pnpm",
+      "args": [
+        "install"
+      ],
+      "dir": "tauri-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/pnpm install"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "/tools/git",
+      "args": [
+        "init"
+      ],
+      "dir": "tauri-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git init"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "/tools/git",
+      "args": [
+        "add",
+        "--all"
+      ],
+      "dir": "tauri-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git add --all"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "/tools/git",
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "dir": "tauri-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git commit -m 'Initial commit'"
+    }
+  ],
+  "warnings": [],
+  "hash": "619cec96c5515bbc98e8b474647eba5e271aea9bca26aafbea89d7a09cc5e957"
+}

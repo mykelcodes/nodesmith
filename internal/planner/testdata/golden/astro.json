@@ -1,0 +1,85 @@
+{
+  "recipeId": "astro",
+  "projectDir": "astro-app",
+  "steps": [
+    {
+      "id": "scaffold",
+      "label": "Scaffold Astro project",
+      "bin": "/tools/npx",
+      "args": [
+        "--yes",
+        "create-astro@latest",
+        "astro-app",
+        "--template",
+        "minimal",
+        "--yes",
+        "--no-install",
+        "--no-git",
+        "--no-ai",
+        "--skip-houston"
+      ],
+      "dir": ".",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/npx --yes create-astro@latest astro-app --template minimal --yes --no-install --no-git --no-ai --skip-houston"
+    },
+    {
+      "id": "install",
+      "label": "Install dependencies",
+      "bin": "/tools/pnpm",
+      "args": [
+        "install"
+      ],
+      "dir": "astro-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/pnpm install"
+    },
+    {
+      "id": "git-init",
+      "label": "Initialise repository",
+      "bin": "/tools/git",
+      "args": [
+        "init"
+      ],
+      "dir": "astro-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git init"
+    },
+    {
+      "id": "git-add",
+      "label": "Stage initial files",
+      "bin": "/tools/git",
+      "args": [
+        "add",
+        "--all"
+      ],
+      "dir": "astro-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git add --all"
+    },
+    {
+      "id": "git-commit",
+      "label": "Create initial commit",
+      "bin": "/tools/git",
+      "args": [
+        "commit",
+        "-m",
+        "Initial commit"
+      ],
+      "dir": "astro-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/git commit -m 'Initial commit'"
+    }
+  ],
+  "warnings": [],
+  "hash": "4126b05b4c509b05cd970c67657f3796e0ed10f907aa901655ab74bc7eabcc3c"
+}
