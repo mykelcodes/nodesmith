@@ -29,13 +29,14 @@
       "label": "Install dependencies",
       "bin": "/tools/pnpm",
       "args": [
-        "install"
+        "install",
+        "--config.strict-dep-builds=false"
       ],
       "dir": "astro-app",
       "env": {
         "CI": "1"
       },
-      "display": "/tools/pnpm install"
+      "display": "/tools/pnpm install --config.strict-dep-builds=false"
     },
     {
       "id": "git-init",
@@ -80,6 +81,8 @@
       "display": "/tools/git commit -m 'Initial commit'"
     }
   ],
-  "warnings": [],
-  "hash": "4126b05b4c509b05cd970c67657f3796e0ed10f907aa901655ab74bc7eabcc3c"
+  "warnings": [
+    "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
+  ],
+  "hash": "2996387598c0e62cc884c47cecd230bb9753146684301c642dd59ea4812f3e9c"
 }

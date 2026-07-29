@@ -16,7 +16,10 @@
   "requires": {
     "node": ">=20.0.0",
     "packageManagers": [
-      "npm"
+      "pnpm",
+      "npm",
+      "yarn",
+      "bun"
     ],
     "tools": []
   },

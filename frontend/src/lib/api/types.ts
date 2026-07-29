@@ -13,6 +13,8 @@ export interface RecipeSummary {
 	icon: string;
 	verifiedAt: string;
 	installPolicy: InstallPolicy;
+	/** Recipe-authored package cooldown in minutes, or null to inherit the global preference. */
+	minimumReleaseAge: number | null;
 	available: boolean;
 	unavailableReasons: string[];
 	defaultPackageManager: string;
@@ -101,6 +103,8 @@ export interface Recipe {
 	icon: string;
 	verifiedAt: string;
 	installPolicy: InstallPolicy;
+	/** Recipe-authored package cooldown in minutes, or null to inherit the global preference. */
+	minimumReleaseAge: number | null;
 	requires: RecipeRequirements;
 	fields: RecipeField[];
 	steps: RecipeStep[];
@@ -140,17 +144,31 @@ export interface ScaffoldRequest {
 	packageManager: string;
 	installDeps: boolean;
 	gitInit: boolean;
+	/** Request-specific package cooldown in minutes, or null to inherit the recipe/global default. */
+	minimumReleaseAge: number | null;
 	answers: Answers;
+}
+
+export type PlanStepKind = 'command' | 'project-config';
+
+export interface ProjectConfig {
+	path: string;
+	format: 'properties' | 'toml' | 'yaml';
+	section: string;
+	key: string;
+	value: string;
 }
 
 export interface PlanStep {
 	id: string;
+	kind: PlanStepKind;
 	label: string;
 	bin: string;
 	args: string[];
 	dir: string;
 	env: Record<string, string>;
 	display: string;
+	config: ProjectConfig | null;
 }
 
 export interface Plan {
@@ -193,6 +211,8 @@ export interface Settings {
 	editor: Editor;
 	theme: Theme;
 	openAfterCreate: boolean;
+	/** Global package cooldown in minutes, or null to leave package managers on their own configuration. */
+	minimumReleaseAge: number | null;
 }
 
 export interface Preset {

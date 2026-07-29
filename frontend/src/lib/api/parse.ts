@@ -13,7 +13,9 @@ import type {
 	LogStream,
 	Plan,
 	PlanStep,
+	PlanStepKind,
 	Preset,
+	ProjectConfig,
 	Recipe,
 	RecipeArg,
 	RecipeField,
@@ -59,6 +61,19 @@ function number(value: unknown, path: string): number {
 function integer(value: unknown, path: string): number {
 	const result = number(value, path);
 	if (!Number.isInteger(result)) return invalid(path, 'an integer');
+	return result;
+}
+
+const MAX_RELEASE_AGE_MINUTES = 525600;
+
+// Go encodes an unset *int as null, and the generated Wails model types it as
+// optional, so both spellings mean "inherit".
+function releaseAgeMinutes(value: unknown, path: string): number | null {
+	if (value === null || value === undefined) return null;
+	const result = integer(value, path);
+	if (result < 0 || result > MAX_RELEASE_AGE_MINUTES) {
+		return invalid(path, `an integer between 0 and ${MAX_RELEASE_AGE_MINUTES} minutes`);
+	}
 	return result;
 }
 
@@ -203,6 +218,7 @@ export function parseRecipeSummary(value: unknown, path = 'RecipeSummary'): Reci
 			`${path}.installPolicy`,
 			installPolicies
 		),
+		minimumReleaseAge: releaseAgeMinutes(source.minimumReleaseAge, `${path}.minimumReleaseAge`),
 		available: boolean(source.available, `${path}.available`),
 		unavailableReasons: stringArray(source.unavailableReasons, `${path}.unavailableReasons`),
 		defaultPackageManager: string(source.defaultPackageManager, `${path}.defaultPackageManager`)
@@ -227,6 +243,7 @@ export function parseRecipe(value: unknown, path = 'Recipe'): Recipe {
 			`${path}.installPolicy`,
 			installPolicies
 		),
+		minimumReleaseAge: releaseAgeMinutes(source.minimumReleaseAge, `${path}.minimumReleaseAge`),
 		requires: recipeRequirements(source.requires, `${path}.requires`),
 		fields: array(source.fields, `${path}.fields`, recipeField),
 		steps: array(source.steps, `${path}.steps`, recipeStep),
@@ -295,20 +312,41 @@ export function parseScaffoldRequest(value: unknown, path = 'ScaffoldRequest'): 
 		packageManager: string(source.packageManager, `${path}.packageManager`),
 		installDeps: boolean(source.installDeps, `${path}.installDeps`),
 		gitInit: boolean(source.gitInit, `${path}.gitInit`),
+		minimumReleaseAge: releaseAgeMinutes(source.minimumReleaseAge, `${path}.minimumReleaseAge`),
 		answers: parseAnswers(source.answers, `${path}.answers`)
 	};
 }
 
 function parsePlanStep(value: unknown, path: string): PlanStep {
 	const source = object(value, path);
+	const kinds = ['command', 'project-config'] as const;
 	return {
 		id: string(source.id, `${path}.id`),
+		kind:
+			source.kind === undefined
+				? 'command'
+				: oneOf<PlanStepKind>(source.kind, `${path}.kind`, kinds),
 		label: string(source.label, `${path}.label`),
 		bin: string(source.bin, `${path}.bin`),
 		args: stringArray(source.args, `${path}.args`),
 		dir: string(source.dir, `${path}.dir`),
 		env: stringRecord(source.env, `${path}.env`),
-		display: string(source.display, `${path}.display`)
+		display: string(source.display, `${path}.display`),
+		config:
+			source.config === null || source.config === undefined
+				? null
+				: parseProjectConfig(source.config, `${path}.config`)
+	};
+}
+
+function parseProjectConfig(value: unknown, path: string): ProjectConfig {
+	const source = object(value, path);
+	return {
+		path: string(source.path, `${path}.path`),
+		format: oneOf(source.format, `${path}.format`, ['properties', 'toml', 'yaml'] as const),
+		section: string(source.section, `${path}.section`),
+		key: string(source.key, `${path}.key`),
+		value: string(source.value, `${path}.value`)
 	};
 }
 
@@ -360,7 +398,8 @@ export function parseSettings(value: unknown, path = 'Settings'): Settings {
 		pathOverride: string(source.pathOverride, `${path}.pathOverride`),
 		editor: string(source.editor, `${path}.editor`),
 		theme: oneOf<Theme>(source.theme, `${path}.theme`, themes),
-		openAfterCreate: boolean(source.openAfterCreate, `${path}.openAfterCreate`)
+		openAfterCreate: boolean(source.openAfterCreate, `${path}.openAfterCreate`),
+		minimumReleaseAge: releaseAgeMinutes(source.minimumReleaseAge, `${path}.minimumReleaseAge`)
 	};
 }
 

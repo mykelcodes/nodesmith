@@ -76,6 +76,8 @@ func TestValidateAdditionalStructuralRules(t *testing.T) {
 		{name: "empty icon", mutate: func(m *Manifest) { m.Icon = "" }, want: "icon: must not be empty"},
 		{name: "bad date", mutate: func(m *Manifest) { m.VerifiedAt = "today" }, want: "YYYY-MM-DD"},
 		{name: "bad install policy", mutate: func(m *Manifest) { m.InstallPolicy = "sometimes" }, want: "installPolicy: unsupported value"},
+		{name: "negative release age", mutate: func(m *Manifest) { m.MinimumReleaseAge = testMinutes(-1) }, want: "minimumReleaseAge: must not be negative"},
+		{name: "release age beyond a year", mutate: func(m *Manifest) { m.MinimumReleaseAge = testMinutes(525601) }, want: "minimumReleaseAge: must be at most"},
 		{name: "empty node requirement", mutate: func(m *Manifest) { m.Requires.Node = "" }, want: "requires.node"},
 		{name: "missing package managers", mutate: func(m *Manifest) { m.Requires.PackageManagers = nil }, want: "must be an array"},
 		{name: "missing tools", mutate: func(m *Manifest) { m.Requires.Tools = nil }, want: "must be an array"},

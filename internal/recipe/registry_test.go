@@ -97,8 +97,15 @@ func TestBundledCatalogueLoadsAllRecipes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if hono.InstallPolicy != "" {
-		t.Fatalf("Hono install policy = %q, want backwards-compatible optional default", hono.InstallPolicy)
+	if hono.InstallPolicy != InstallRequired {
+		t.Fatalf("Hono install policy = %q, want required", hono.InstallPolicy)
+	}
+	vite, err := registry.Get("vite")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if vite.InstallPolicy != "" {
+		t.Fatalf("Vite install policy = %q, want backwards-compatible optional default", vite.InstallPolicy)
 	}
 }
 

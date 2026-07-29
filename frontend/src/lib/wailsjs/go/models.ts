@@ -117,14 +117,36 @@ export namespace services {
 	        this.stepId = source["stepId"];
 	    }
 	}
+	export class ProjectConfig {
+	    path: string;
+	    format: string;
+	    section: string;
+	    key: string;
+	    value: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ProjectConfig(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.format = source["format"];
+	        this.section = source["section"];
+	        this.key = source["key"];
+	        this.value = source["value"];
+	    }
+	}
 	export class PlanStep {
 	    id: string;
+	    kind: string;
 	    label: string;
 	    bin: string;
 	    args: string[];
 	    dir: string;
 	    env: Record<string, string>;
 	    display: string;
+	    config?: ProjectConfig;
 	
 	    static createFrom(source: any = {}) {
 	        return new PlanStep(source);
@@ -133,13 +155,33 @@ export namespace services {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
+	        this.kind = source["kind"];
 	        this.label = source["label"];
 	        this.bin = source["bin"];
 	        this.args = source["args"];
 	        this.dir = source["dir"];
 	        this.env = source["env"];
 	        this.display = source["display"];
+	        this.config = this.convertValues(source["config"], ProjectConfig);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class Plan {
 	    recipeId: string;
@@ -187,6 +229,7 @@ export namespace services {
 	    packageManager: string;
 	    installDeps: boolean;
 	    gitInit: boolean;
+	    minimumReleaseAge?: number;
 	    answers: Record<string, any>;
 	
 	    static createFrom(source: any = {}) {
@@ -201,6 +244,7 @@ export namespace services {
 	        this.packageManager = source["packageManager"];
 	        this.installDeps = source["installDeps"];
 	        this.gitInit = source["gitInit"];
+	        this.minimumReleaseAge = source["minimumReleaseAge"];
 	        this.answers = source["answers"];
 	    }
 	}
@@ -244,6 +288,7 @@ export namespace services {
 		    return a;
 		}
 	}
+	
 	export class RecipeStep {
 	    id: string;
 	    label: string;
@@ -351,6 +396,7 @@ export namespace services {
 	    icon: string;
 	    verifiedAt: string;
 	    installPolicy: string;
+	    minimumReleaseAge?: number;
 	    requires: RecipeRequirements;
 	    fields: RecipeField[];
 	    steps: RecipeStep[];
@@ -373,6 +419,7 @@ export namespace services {
 	        this.icon = source["icon"];
 	        this.verifiedAt = source["verifiedAt"];
 	        this.installPolicy = source["installPolicy"];
+	        this.minimumReleaseAge = source["minimumReleaseAge"];
 	        this.requires = this.convertValues(source["requires"], RecipeRequirements);
 	        this.fields = this.convertValues(source["fields"], RecipeField);
 	        this.steps = this.convertValues(source["steps"], RecipeStep);
@@ -412,6 +459,7 @@ export namespace services {
 	    icon: string;
 	    verifiedAt: string;
 	    installPolicy: string;
+	    minimumReleaseAge?: number;
 	    available: boolean;
 	    unavailableReasons: string[];
 	    defaultPackageManager: string;
@@ -431,6 +479,7 @@ export namespace services {
 	        this.icon = source["icon"];
 	        this.verifiedAt = source["verifiedAt"];
 	        this.installPolicy = source["installPolicy"];
+	        this.minimumReleaseAge = source["minimumReleaseAge"];
 	        this.available = source["available"];
 	        this.unavailableReasons = source["unavailableReasons"];
 	        this.defaultPackageManager = source["defaultPackageManager"];
@@ -459,6 +508,8 @@ export namespace services {
 	    editor: string;
 	    theme: string;
 	    openAfterCreate: boolean;
+	    minimumReleaseAge?: number;
+	    recipeMinimumReleaseAge?: Record<string, number>;
 	
 	    static createFrom(source: any = {}) {
 	        return new Settings(source);
@@ -471,6 +522,8 @@ export namespace services {
 	        this.editor = source["editor"];
 	        this.theme = source["theme"];
 	        this.openAfterCreate = source["openAfterCreate"];
+	        this.minimumReleaseAge = source["minimumReleaseAge"];
+	        this.recipeMinimumReleaseAge = source["recipeMinimumReleaseAge"];
 	    }
 	}
 	export class Tool {

@@ -15,6 +15,7 @@ const recipe: Recipe = {
 	icon: 'test',
 	verifiedAt: '2026-07-28',
 	installPolicy: 'optional',
+	minimumReleaseAge: null,
 	requires: {
 		node: '>=20',
 		packageManagers: ['pnpm', 'npm'],
@@ -52,6 +53,7 @@ const request: ScaffoldRequest = {
 	packageManager: 'pnpm',
 	installDeps: true,
 	gitInit: true,
+	minimumReleaseAge: null,
 	answers: {
 		typescript: false,
 		scope: ''
@@ -72,10 +74,12 @@ describe('DynamicRecipeForm', () => {
 		await expect
 			.element(page.getByLabelText('Project name'))
 			.toHaveAttribute('aria-required', 'true');
-		await expect.element(page.getByLabelText('Parent directory')).toHaveAttribute('required');
-		await expect.element(page.getByLabelText('Package manager')).toHaveAttribute('required');
-		await expect.element(page.getByRole('option', { name: 'pnpm' })).toBeInTheDocument();
-		await expect.element(page.getByRole('option', { name: 'npm' })).not.toBeInTheDocument();
+		await expect.element(page.getByPlaceholder('/path/to/projects')).toHaveAttribute('required');
+		await expect
+			.element(page.getByRole('combobox', { name: /^Package manager/ }))
+			.toHaveAttribute('required');
+		await expect.element(page.getByRole('option', { name: /^pnpm$/ })).toBeInTheDocument();
+		await expect.element(page.getByRole('option', { name: /^npm$/ })).not.toBeInTheDocument();
 		await expect
 			.element(page.getByText('Choose an available package manager.'))
 			.toBeInTheDocument();

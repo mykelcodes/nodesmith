@@ -210,6 +210,14 @@ Use `when` to gate a whole step. Scaffold steps normally run in `parentDir`; ins
 normally run in `projectDir`. Bundled recipes initialise Git, stage the generated files, and create
 an `Initial commit` when `gitInit` is enabled.
 
+For a plain `pnpm install` step, Nodesmith adds
+`--config.strict-dep-builds=false` to the reviewed command. pnpm still blocks
+unapproved dependency build scripts and records them in `pnpm-workspace.yaml`,
+but the pending approvals do not turn an otherwise completed scaffold into a
+failed run. Users can review and approve those scripts later with
+`pnpm approve-builds`. A recipe that supplies an explicit pnpm build-script
+policy keeps that policy unchanged.
+
 Recipes must never rely on a prompt. Verify the current generator help or upstream CLI option
 definitions, then provide the project name and every option needed to suppress questions.
 Prefer explicit no-install and no-git flags so Nodesmith retains control through `installDeps` and

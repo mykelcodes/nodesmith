@@ -25,13 +25,14 @@
       "label": "Install dependencies",
       "bin": "/tools/pnpm",
       "args": [
-        "install"
+        "install",
+        "--config.strict-dep-builds=false"
       ],
       "dir": "svelte-app",
       "env": {
         "CI": "1"
       },
-      "display": "/tools/pnpm install"
+      "display": "/tools/pnpm install --config.strict-dep-builds=false"
     },
     {
       "id": "git-init",
@@ -76,6 +77,8 @@
       "display": "/tools/git commit -m 'Initial commit'"
     }
   ],
-  "warnings": [],
-  "hash": "7ff10fcfd35a289c77c15b0cf22bf7032cfd4e27528a354c3df665be8097239e"
+  "warnings": [
+    "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
+  ],
+  "hash": "5d018c970b5d55a3185e93b52bd3df943a191226d09e4a56bacd008d8abf5602"
 }

@@ -25,13 +25,14 @@
       "label": "Install dependencies",
       "bin": "/tools/pnpm",
       "args": [
-        "install"
+        "install",
+        "--config.strict-dep-builds=false"
       ],
       "dir": "solid-app",
       "env": {
         "CI": "1"
       },
-      "display": "/tools/pnpm install"
+      "display": "/tools/pnpm install --config.strict-dep-builds=false"
     },
     {
       "id": "git-init",
@@ -76,6 +77,8 @@
       "display": "/tools/git commit -m 'Initial commit'"
     }
   ],
-  "warnings": [],
-  "hash": "470d14920e907586cb1dc00020e775208d76f91a3b85e7654d3cb850161f9577"
+  "warnings": [
+    "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
+  ],
+  "hash": "e35d03d0cb6d71f4e50d8bb344058f8bf9063654ab86070595755d061f761e8e"
 }

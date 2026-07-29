@@ -110,6 +110,7 @@
 					: recipe.requires.packageManagers.at(0) || '',
 				installDeps: true,
 				gitInit: true,
+				minimumReleaseAge: null,
 				answers: createDefaultAnswers(recipe.fields)
 			};
 			wizard.selectRecipe(recipe);

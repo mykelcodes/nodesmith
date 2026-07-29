@@ -69,6 +69,12 @@
         "required"
       ]
     },
+    "minimumReleaseAge": {
+      "description": "Recipe-local package cooldown in minutes. Omit the property to inherit the user's global preference; use 0 to disable the cooldown for this recipe.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 525600
+    },
     "requires": {
       "$ref": "#/$defs/requires"
     },

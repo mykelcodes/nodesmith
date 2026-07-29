@@ -30,13 +30,14 @@
       "label": "Install dependencies",
       "bin": "/tools/pnpm",
       "args": [
-        "install"
+        "install",
+        "--config.strict-dep-builds=false"
       ],
       "dir": "sveltekit-app",
       "env": {
         "CI": "1"
       },
-      "display": "/tools/pnpm install"
+      "display": "/tools/pnpm install --config.strict-dep-builds=false"
     },
     {
       "id": "git-init",
@@ -81,6 +82,8 @@
       "display": "/tools/git commit -m 'Initial commit'"
     }
   ],
-  "warnings": [],
-  "hash": "83c8c39b3ca89320a7cc87837e087efce4df71d367cece64a736e315ab437595"
+  "warnings": [
+    "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
+  ],
+  "hash": "a39735a36baf1a783fe3a7de53fb1d8e2538d3fe5faa969e42aef91f3386d7e8"
 }

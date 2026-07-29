@@ -42,13 +42,14 @@ func TestStoreServiceSettingsPresetsAndHistory(t *testing.T) {
 	preset := Preset{
 		Name: "Svelte default",
 		Request: ScaffoldRequest{
-			RecipeID:       "sveltekit",
-			ProjectName:    "my-app",
-			ParentDir:      "/projects",
-			PackageManager: "pnpm",
-			InstallDeps:    true,
-			GitInit:        true,
-			Answers:        map[string]any{"typescript": true},
+			RecipeID:          "sveltekit",
+			ProjectName:       "my-app",
+			ParentDir:         "/projects",
+			PackageManager:    "pnpm",
+			InstallDeps:       true,
+			GitInit:           true,
+			MinimumReleaseAge: testMinutes(4320),
+			Answers:           map[string]any{"typescript": true},
 		},
 	}
 	if err := service.SavePreset(preset); err != nil {
@@ -60,6 +61,13 @@ func TestStoreServiceSettingsPresetsAndHistory(t *testing.T) {
 	}
 	if len(presets) != 1 || presets[0].ID == "" || presets[0].CreatedAt != fixedNow {
 		t.Fatalf("presets = %#v", presets)
+	}
+	if presets[0].Request.MinimumReleaseAge == nil ||
+		*presets[0].Request.MinimumReleaseAge != 4320 {
+		t.Fatalf(
+			"preset minimum release age = %v, want 4320",
+			presets[0].Request.MinimumReleaseAge,
+		)
 	}
 	if err := service.DeletePreset(presets[0].ID); err != nil {
 		t.Fatalf("DeletePreset() error = %v", err)

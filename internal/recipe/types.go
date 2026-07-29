@@ -19,9 +19,31 @@ type Manifest struct {
 	Icon          string        `json:"icon"`
 	VerifiedAt    string        `json:"verifiedAt"`
 	InstallPolicy InstallPolicy `json:"installPolicy,omitempty"`
-	Requires      Requirements  `json:"requires"`
-	Fields        []Field       `json:"fields"`
-	Steps         []Step        `json:"steps"`
+	// MinimumReleaseAge is the recipe-local package cooldown in minutes. A nil
+	// pointer means the recipe expresses no opinion and the global preference
+	// applies; zero explicitly disables the cooldown for this recipe.
+	MinimumReleaseAge *int         `json:"minimumReleaseAge,omitempty"`
+	Requires          Requirements `json:"requires"`
+	Fields            []Field      `json:"fields"`
+	Steps             []Step       `json:"steps"`
+}
+
+// MaxMinimumReleaseAge caps a cooldown at one year of minutes so an obvious
+// unit mix-up (seconds or milliseconds) is rejected instead of silently
+// blocking every install.
+const MaxMinimumReleaseAge = 525600
+
+// ValidateMinimumReleaseAge reports whether minutes is a usable cooldown. It is
+// shared by manifest validation and the local settings store so recipe authors
+// and users are held to the same range.
+func ValidateMinimumReleaseAge(minutes int) error {
+	if minutes < 0 {
+		return fmt.Errorf("must not be negative, got %d", minutes)
+	}
+	if minutes > MaxMinimumReleaseAge {
+		return fmt.Errorf("must be at most %d minutes (one year), got %d", MaxMinimumReleaseAge, minutes)
+	}
+	return nil
 }
 
 // InstallPolicy declares whether a generator can honour installDeps=false.

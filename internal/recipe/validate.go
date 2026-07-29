@@ -98,6 +98,11 @@ func Validate(manifest Manifest) error {
 	default:
 		return fmt.Errorf("installPolicy: unsupported value %q", manifest.InstallPolicy)
 	}
+	if manifest.MinimumReleaseAge != nil {
+		if err := ValidateMinimumReleaseAge(*manifest.MinimumReleaseAge); err != nil {
+			return fmt.Errorf("minimumReleaseAge: %w", err)
+		}
+	}
 	if err := validateRequirements(manifest.Requires); err != nil {
 		return err
 	}

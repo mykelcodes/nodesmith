@@ -73,6 +73,12 @@ func TestRunnerHelper(t *testing.T) {
 	case "protected-environment":
 		_, _ = fmt.Fprintln(os.Stdout, os.Getenv("CI"))
 		_, _ = fmt.Fprintln(os.Stdout, os.Getenv("PATH"))
+	case "read-file":
+		content, err := os.ReadFile(args[1])
+		if err != nil {
+			os.Exit(8)
+		}
+		_, _ = fmt.Fprint(os.Stdout, string(content))
 	default:
 		os.Exit(4)
 	}
@@ -142,6 +148,49 @@ func TestManagerFailureStopsRemainingSteps(t *testing.T) {
 	}
 	if !strings.Contains(final.Error, "process exited with code 7") {
 		t.Fatalf("Error = %q, want exit-code context", final.Error)
+	}
+}
+
+func TestManagerWritesProjectConfigBeforeTheFollowingCommand(t *testing.T) {
+	projectDir := t.TempDir()
+	configStep := planner.PlanStep{
+		ID:      "minimum-release-age-config",
+		Kind:    planner.StepKindProjectConfig,
+		Label:   "Write package-manager security policy",
+		Dir:     projectDir,
+		Env:     map[string]string{},
+		Args:    []string{},
+		Display: "write pnpm-workspace.yaml: minimumReleaseAge = 4320",
+		Config: &planner.ProjectConfig{
+			Path:   "pnpm-workspace.yaml",
+			Format: planner.ConfigFormatYAML,
+			Key:    "minimumReleaseAge",
+			Value:  "4320",
+		},
+	}
+	readStep := helperStep(t, "read-file", filepath.Join(projectDir, "pnpm-workspace.yaml"))
+	readStep.Dir = projectDir
+	manager := NewManager()
+	job, err := manager.Start(planner.Plan{
+		RecipeID:   "test",
+		ProjectDir: projectDir,
+		Steps:      []planner.PlanStep{configStep, readStep},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	final := waitForTerminal(t, manager, job.ID, 5*time.Second)
+	if final.State != StateSuccess {
+		t.Fatalf("job = %#v, want success", final)
+	}
+	logs, err := manager.Logs(job.ID, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(logs) != 2 ||
+		logs[0].StepID != configStep.ID ||
+		!strings.Contains(logs[1].Text, "minimumReleaseAge: 4320") {
+		t.Fatalf("logs = %#v, want config write before file-reading command", logs)
 	}
 }
 

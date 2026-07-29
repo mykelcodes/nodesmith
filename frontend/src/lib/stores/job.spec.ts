@@ -22,12 +22,14 @@ function job(state: Job['state'], stepIndex: number, stepCount = 3): Job {
 
 const planSteps: PlanStep[] = ['create', 'install', 'git'].map((id) => ({
 	id,
+	kind: 'command',
 	label: id,
 	bin: id,
 	args: [],
 	dir: '/projects',
 	env: {},
-	display: id
+	display: id,
+	config: null
 }));
 
 describe('mergeLogLines', () => {

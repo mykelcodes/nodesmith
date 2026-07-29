@@ -5,6 +5,7 @@
 	import { api, toErrorMessage, type Preset } from '$lib/api';
 	import Icon from '$lib/components/icons/Icon.svelte';
 	import { Badge, Button, EmptyState } from '$lib/components/ui';
+	import { formatReleaseAge } from '$lib/settings/releaseAge';
 	import { wizard } from '$lib/stores';
 
 	let presets = $state<Preset[]>([]);
@@ -175,6 +176,14 @@
 					<div class="grid grid-cols-[7rem_minmax(0,1fr)] gap-2">
 						<dt class="text-ink-faint">Package manager</dt>
 						<dd class="font-mono text-ink">{preset.request.packageManager || 'Not required'}</dd>
+					</div>
+					<div class="grid grid-cols-[7rem_minmax(0,1fr)] gap-2">
+						<dt class="text-ink-faint">Release age</dt>
+						<dd class="text-ink">
+							{preset.request.minimumReleaseAge === null
+								? 'Inherit'
+								: formatReleaseAge(preset.request.minimumReleaseAge)}
+						</dd>
 					</div>
 					<div class="grid grid-cols-[7rem_minmax(0,1fr)] gap-2">
 						<dt class="text-ink-faint">Recipe answers</dt>

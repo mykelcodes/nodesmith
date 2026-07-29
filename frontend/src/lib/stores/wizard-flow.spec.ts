@@ -14,6 +14,7 @@ const recipe: Recipe = {
 	icon: 'vite',
 	verifiedAt: '2026-07-28',
 	installPolicy: 'optional',
+	minimumReleaseAge: null,
 	requires: { node: '>=20', packageManagers: ['pnpm'], tools: [] },
 	fields: [],
 	steps: [],
@@ -28,6 +29,7 @@ const request: ScaffoldRequest = {
 	packageManager: 'pnpm',
 	installDeps: true,
 	gitInit: true,
+	minimumReleaseAge: null,
 	answers: {}
 };
 
@@ -37,12 +39,14 @@ const plan: Plan = {
 	steps: [
 		{
 			id: 'create',
+			kind: 'command',
 			label: 'Create project',
 			bin: 'pnpm',
 			args: ['create', 'vite', 'demo'],
 			dir: '/projects',
 			env: { CI: '1' },
-			display: 'pnpm create vite demo'
+			display: 'pnpm create vite demo',
+			config: null
 		}
 	],
 	warnings: [],
@@ -78,10 +82,23 @@ describe('mocked Wails wizard route path', () => {
 			{ seq: 0, stepId: 'create', stream: 'stdout', text: 'created demo' }
 		];
 		const bindings = {
-			getRecipe: vi.fn(async (_recipeId: string) => recipe),
-			plan: vi.fn(async (_request: ScaffoldRequest) => plan),
-			start: vi.fn(async (_request: ScaffoldRequest) => runningJob),
-			logs: vi.fn(async (_jobId: string, _fromSequence: number) => retainedLines)
+			getRecipe: vi.fn(async (recipeId: string) => {
+				void recipeId;
+				return recipe;
+			}),
+			plan: vi.fn(async (scaffoldRequest: ScaffoldRequest) => {
+				void scaffoldRequest;
+				return plan;
+			}),
+			start: vi.fn(async (scaffoldRequest: ScaffoldRequest) => {
+				void scaffoldRequest;
+				return runningJob;
+			}),
+			logs: vi.fn(async (jobId: string, fromSequence: number) => {
+				void jobId;
+				void fromSequence;
+				return retainedLines;
+			})
 		};
 
 		wizard.selectRecipe(await bindings.getRecipe('vite'));

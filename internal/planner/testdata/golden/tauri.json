@@ -31,13 +31,14 @@
       "label": "Install dependencies",
       "bin": "/tools/pnpm",
       "args": [
-        "install"
+        "install",
+        "--config.strict-dep-builds=false"
       ],
       "dir": "tauri-app",
       "env": {
         "CI": "1"
       },
-      "display": "/tools/pnpm install"
+      "display": "/tools/pnpm install --config.strict-dep-builds=false"
     },
     {
       "id": "git-init",
@@ -82,6 +83,8 @@
       "display": "/tools/git commit -m 'Initial commit'"
     }
   ],
-  "warnings": [],
-  "hash": "619cec96c5515bbc98e8b474647eba5e271aea9bca26aafbea89d7a09cc5e957"
+  "warnings": [
+    "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
+  ],
+  "hash": "9cdbc7d2c640acff40ae75e2170ff6cf5882390d7315e253a14c744c6e990855"
 }

@@ -87,6 +87,12 @@ func (service *StoreService) SaveSettings(settings Settings) error {
 	if strings.IndexByte(settings.PathOverride, 0) >= 0 {
 		return errors.New("save settings: PATH override contains a NUL byte")
 	}
+	if err := validateMinimumReleaseAgeSettings(settings); err != nil {
+		return fmt.Errorf("save settings: %w", err)
+	}
+	// Per-recipe choices moved to scaffold requests and presets. Clearing the
+	// legacy field migrates version-one settings the next time they are saved.
+	settings.RecipeMinimumReleaseAge = nil
 	if err := service.settings.Save(settings); err != nil {
 		return fmt.Errorf("save settings: %w", err)
 	}
@@ -116,6 +122,9 @@ func (service *StoreService) SavePreset(preset Preset) error {
 	}
 	if preset.Request.RecipeID == "" {
 		return errors.New("save preset: recipe is required")
+	}
+	if err := validateMinimumReleaseAgeRequest(preset.Request); err != nil {
+		return fmt.Errorf("save preset: %w", err)
 	}
 	now := service.now().UTC()
 	if preset.ID == "" {

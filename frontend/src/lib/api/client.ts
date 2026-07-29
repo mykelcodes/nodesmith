@@ -80,6 +80,20 @@ async function call<T>(
 	}
 }
 
+// Go's time.Time rejects an empty string, so unset timestamps travel as its zero value.
+const goZeroTime = '0001-01-01T00:00:00Z';
+
+function wireTime(value: string): string {
+	return value === '' ? goZeroTime : value;
+}
+
+function wireScaffoldRequest(request: ScaffoldRequest): WailsModels.ScaffoldRequest {
+	return new WailsModels.ScaffoldRequest({
+		...request,
+		minimumReleaseAge: request.minimumReleaseAge ?? undefined
+	});
+}
+
 const recipes = {
 	list: () =>
 		call('RecipeService', 'List', 'Load recipes', RecipeBindings.List, (value) =>
@@ -149,7 +163,7 @@ const scaffold = {
 			'ScaffoldService',
 			'Plan',
 			'Build project plan',
-			() => ScaffoldBindings.Plan(safeRequest),
+			() => ScaffoldBindings.Plan(wireScaffoldRequest(safeRequest)),
 			(value) => parsePlan(value, 'ScaffoldService.Plan')
 		);
 	},
@@ -159,7 +173,7 @@ const scaffold = {
 			'ScaffoldService',
 			'Start',
 			'Start project creation',
-			() => ScaffoldBindings.Start(safeRequest),
+			() => ScaffoldBindings.Start(wireScaffoldRequest(safeRequest)),
 			(value) => parseJob(value, 'ScaffoldService.Start')
 		);
 	},
@@ -220,11 +234,17 @@ const store = {
 		),
 	saveSettings: (settings: Settings) => {
 		const safeSettings = parseSettings(settings);
+		// The generated binding models an unset *int as optional, so "no global
+		// cooldown" has to travel as undefined rather than null.
+		const bindingSettings = new WailsModels.Settings({
+			...safeSettings,
+			minimumReleaseAge: safeSettings.minimumReleaseAge ?? undefined
+		});
 		return call(
 			'StoreService',
 			'SaveSettings',
 			'Save settings',
-			() => StoreBindings.SaveSettings(safeSettings),
+			() => StoreBindings.SaveSettings(bindingSettings),
 			(value) => parseVoid(value, 'StoreService.SaveSettings')
 		);
 	},
@@ -234,7 +254,12 @@ const store = {
 		),
 	savePreset: (preset: Preset) => {
 		const safePreset = parsePresetInput(preset);
-		const bindingPreset = new WailsModels.Preset(safePreset);
+		const bindingPreset = new WailsModels.Preset({
+			...safePreset,
+			request: wireScaffoldRequest(safePreset.request),
+			createdAt: wireTime(safePreset.createdAt),
+			updatedAt: wireTime(safePreset.updatedAt)
+		});
 		return call(
 			'StoreService',
 			'SavePreset',

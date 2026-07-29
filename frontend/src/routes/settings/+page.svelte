@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import { api, toErrorMessage, type Settings } from '$lib/api';
 	import Icon from '$lib/components/icons/Icon.svelte';
+	import ReleaseAgeControl from '$lib/components/settings/ReleaseAgeControl.svelte';
 	import { Button, EmptyState, Field, Select, TextInput, Toggle } from '$lib/components/ui';
 	import {
 		builtInEditorOptions,
@@ -30,11 +31,11 @@
 	let notice = $state('');
 	let editorChoice = $state<string>('code');
 	let customEditorPath = $state('');
+	let releaseAgeError = $state('');
 
 	const customEditorError = $derived(
 		editorChoice === CUSTOM_EDITOR_OPTION ? validateCustomEditorPath(customEditorPath) : ''
 	);
-
 	function update<Key extends keyof Settings>(key: Key, value: Settings[Key]) {
 		if (!settings) return;
 		settings = { ...settings, [key]: value };
@@ -49,6 +50,11 @@
 	function setCustomEditorPath(value: string) {
 		customEditorPath = value;
 		update('editor', value);
+	}
+
+	function setGlobalReleaseAge(minutes: number | null, message: string) {
+		releaseAgeError = message;
+		if (!message) update('minimumReleaseAge', minutes);
 	}
 
 	async function load() {
@@ -86,6 +92,10 @@
 		notice = '';
 		if (customEditorError) {
 			error = customEditorError;
+			return;
+		}
+		if (releaseAgeError) {
+			error = releaseAgeError;
 			return;
 		}
 		saving = true;
@@ -288,6 +298,31 @@
 						stay on this machine.
 					</p>
 				</div>
+			</div>
+		</section>
+
+		<section
+			class="rounded-panel border border-line bg-panel/75 p-5 shadow-sm sm:p-6 lg:col-span-2"
+		>
+			<p class="text-xs font-bold tracking-[0.12em] text-brand-strong uppercase">Supply chain</p>
+			<h2 class="mt-1 text-lg font-bold text-ink">Minimum release age</h2>
+			<p class="mt-2 max-w-3xl text-sm leading-6 text-ink-muted">
+				Refuse package versions published more recently than this while scaffolding, so a
+				compromised release has time to be caught. Nodesmith passes the value to npm, pnpm, and Yarn
+				through the environment of every generated command. npm counts whole days, so shorter values
+				are rounded up for npm and npx steps. Nodesmith also writes the selected package manager’s
+				project configuration before installing dependencies.
+			</p>
+
+			<div class="mt-6 max-w-xl">
+				<ReleaseAgeControl
+					label="Global default"
+					inheritLabel="Not set"
+					inheritHint="Each package manager keeps its own configuration. pnpm 11 applies a one-day cooldown by default."
+					help="Inherited during catalogue configuration when the recipe does not supply its own default."
+					value={activeSettings.minimumReleaseAge}
+					onchange={setGlobalReleaseAge}
+				/>
 			</div>
 		</section>
 

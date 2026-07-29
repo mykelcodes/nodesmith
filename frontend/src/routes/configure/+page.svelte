@@ -12,6 +12,7 @@
 	} from '$lib/api';
 	import { DynamicRecipeForm, WizardProgress } from '$lib/components/form';
 	import Icon from '$lib/components/icons/Icon.svelte';
+	import ReleaseAgeControl from '$lib/components/settings/ReleaseAgeControl.svelte';
 	import { Button, EmptyState, TextInput } from '$lib/components/ui';
 	import {
 		createDefaultAnswers,
@@ -20,6 +21,7 @@
 		type FieldErrors
 	} from '$lib/form';
 	import { wizard } from '$lib/stores';
+	import { describeReleaseAge, resolveReleaseAge } from '$lib/settings/releaseAge';
 	import {
 		availablePackageManagers,
 		repairPackageManagerSelection
@@ -35,6 +37,8 @@
 	let savingPreset = $state(false);
 	let presetNotice = $state('');
 	let usablePackageManagers = $state<string[]>([]);
+	let globalMinimumReleaseAge = $state<number | null>(null);
+	let releaseAgeError = $state('');
 
 	async function initialise() {
 		loading = true;
@@ -52,16 +56,20 @@
 				throw new Error('Choose a recipe from the catalogue before configuring a project.');
 			}
 
-			const toolchain = await api.toolchain.detect(false);
+			const [toolchain, settings] = await Promise.all([
+				api.toolchain.detect(false),
+				api.store.getSettings()
+			]);
+			globalMinimumReleaseAge = settings.minimumReleaseAge;
 			usablePackageManagers = availablePackageManagers(recipe.requires.packageManagers, toolchain);
 
 			if (snapshot.request?.recipeId === recipe.id) {
-				request =
-					recipe.installPolicy === 'required'
-						? { ...snapshot.request, installDeps: true }
-						: snapshot.request;
+				request = {
+					...snapshot.request,
+					installDeps: recipe.installPolicy === 'required' ? true : snapshot.request.installDeps,
+					minimumReleaseAge: snapshot.request.minimumReleaseAge ?? null
+				};
 			} else {
-				const settings = await api.store.getSettings();
 				request = {
 					recipeId: recipe.id,
 					projectName: '',
@@ -69,6 +77,7 @@
 					packageManager: '',
 					installDeps: true,
 					gitInit: true,
+					minimumReleaseAge: null,
 					answers: createDefaultAnswers(recipe.fields)
 				};
 			}
@@ -94,6 +103,7 @@
 		const projectNameError = validatePortableProjectName(request.projectName);
 		if (projectNameError) nextErrors.projectName = projectNameError;
 		if (request.parentDir.trim() === '') nextErrors.parentDir = 'Parent directory is required.';
+		if (releaseAgeError) nextErrors.minimumReleaseAge = releaseAgeError;
 		if (
 			recipe.requires.packageManagers.length > 0 &&
 			!usablePackageManagers.includes(request.packageManager)
@@ -125,6 +135,20 @@
 		if (!request || !validate()) return;
 		wizard.setRequest(request);
 		await goto(resolve('/review'));
+	}
+
+	function setMinimumReleaseAge(minutes: number | null, message: string) {
+		releaseAgeError = message;
+		if (message || !request) return;
+		request = { ...request, minimumReleaseAge: minutes };
+		wizard.setRequest(request);
+	}
+
+	function inheritedReleaseAge() {
+		if (!recipe) return '';
+		return describeReleaseAge(
+			resolveReleaseAge(null, recipe.minimumReleaseAge, globalMinimumReleaseAge)
+		);
 	}
 
 	async function savePreset() {
@@ -239,6 +263,28 @@
 			onPickDirectory={pickDirectory}
 			onRequestChange={(nextRequest) => wizard.setRequest(nextRequest)}
 		/>
+
+		<section class="mt-6 rounded-panel border border-line bg-panel/80 p-5 shadow-sm sm:p-6">
+			<div class="border-b border-line pb-5">
+				<p class="text-xs font-bold tracking-[0.12em] text-brand-strong uppercase">Supply chain</p>
+				<h2 class="mt-1 text-lg font-bold tracking-[-0.025em] text-ink">Minimum release age</h2>
+				<p class="mt-1 max-w-3xl text-sm leading-6 text-ink-muted">
+					Refuse package versions published more recently than this. Inherit uses the recipe default
+					first, then the global default from Settings.
+				</p>
+			</div>
+
+			<div class="mt-6 max-w-xl">
+				<ReleaseAgeControl
+					label="Minimum release age"
+					inheritLabel="Inherit"
+					inheritHint={inheritedReleaseAge()}
+					help="This value is included when you save the configuration as a preset."
+					value={request.minimumReleaseAge}
+					onchange={setMinimumReleaseAge}
+				/>
+			</div>
+		</section>
 
 		<section
 			class="mt-6 flex flex-col gap-4 rounded-panel border border-line bg-panel/65 p-4 sm:flex-row sm:items-end sm:justify-between"

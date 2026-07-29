@@ -67,6 +67,7 @@ func (service *RecipeService) List() ([]RecipeSummary, error) {
 			Icon:                  manifest.Icon,
 			VerifiedAt:            manifest.VerifiedAt,
 			InstallPolicy:         normalizedInstallPolicy(manifest),
+			MinimumReleaseAge:     cloneMinutes(manifest.MinimumReleaseAge),
 			Available:             available,
 			UnavailableReasons:    reasons,
 			DefaultPackageManager: manager,
@@ -217,7 +218,8 @@ func recipeDTO(manifest recipe.Manifest) (Recipe, error) {
 		Tags:          cloneSlice(manifest.Tags),
 		Icon:          manifest.Icon,
 		VerifiedAt:    manifest.VerifiedAt,
-		InstallPolicy: normalizedInstallPolicy(manifest),
+		InstallPolicy:     normalizedInstallPolicy(manifest),
+		MinimumReleaseAge: cloneMinutes(manifest.MinimumReleaseAge),
 		Requires: RecipeRequirements{
 			Node:            manifest.Requires.Node,
 			PackageManagers: cloneSlice(manifest.Requires.PackageManagers),

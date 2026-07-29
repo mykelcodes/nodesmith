@@ -21,6 +21,7 @@ type RecipeSummary struct {
 	Icon                  string   `json:"icon"`
 	VerifiedAt            string   `json:"verifiedAt"`
 	InstallPolicy         string   `json:"installPolicy"`
+	MinimumReleaseAge     *int     `json:"minimumReleaseAge"`
 	Available             bool     `json:"available"`
 	UnavailableReasons    []string `json:"unavailableReasons"`
 	DefaultPackageManager string   `json:"defaultPackageManager"`
@@ -73,6 +74,7 @@ type Recipe struct {
 	Icon               string             `json:"icon"`
 	VerifiedAt         string             `json:"verifiedAt"`
 	InstallPolicy      string             `json:"installPolicy"`
+	MinimumReleaseAge  *int               `json:"minimumReleaseAge"`
 	Requires           RecipeRequirements `json:"requires"`
 	Fields             []RecipeField      `json:"fields"`
 	Steps              []RecipeStep       `json:"steps"`
@@ -111,13 +113,14 @@ type Toolchain struct {
 
 // ScaffoldRequest contains built-in and recipe-specific answers.
 type ScaffoldRequest struct {
-	RecipeID       string         `json:"recipeId"`
-	ProjectName    string         `json:"projectName"`
-	ParentDir      string         `json:"parentDir"`
-	PackageManager string         `json:"packageManager"`
-	InstallDeps    bool           `json:"installDeps"`
-	GitInit        bool           `json:"gitInit"`
-	Answers        map[string]any `json:"answers"`
+	RecipeID          string         `json:"recipeId"`
+	ProjectName       string         `json:"projectName"`
+	ParentDir         string         `json:"parentDir"`
+	PackageManager    string         `json:"packageManager"`
+	InstallDeps       bool           `json:"installDeps"`
+	GitInit           bool           `json:"gitInit"`
+	MinimumReleaseAge *int           `json:"minimumReleaseAge"`
+	Answers           map[string]any `json:"answers"`
 }
 
 // Plan is the exact, reviewable execution plan.
@@ -132,12 +135,23 @@ type Plan struct {
 // PlanStep is one resolved process invocation.
 type PlanStep struct {
 	ID      string            `json:"id"`
+	Kind    string            `json:"kind"`
 	Label   string            `json:"label"`
 	Bin     string            `json:"bin"`
 	Args    []string          `json:"args"`
 	Dir     string            `json:"dir"`
 	Env     map[string]string `json:"env"`
 	Display string            `json:"display"`
+	Config  *ProjectConfig    `json:"config"`
+}
+
+// ProjectConfig is a reviewable structured edit to a package-manager file.
+type ProjectConfig struct {
+	Path    string `json:"path"`
+	Format  string `json:"format"`
+	Section string `json:"section"`
+	Key     string `json:"key"`
+	Value   string `json:"value"`
 }
 
 // Job is a stable scaffold-job snapshot.
@@ -168,6 +182,28 @@ type Settings struct {
 	Editor           string `json:"editor"`
 	Theme            string `json:"theme"`
 	OpenAfterCreate  bool   `json:"openAfterCreate"`
+	// MinimumReleaseAge is the global package cooldown in minutes, or nil when
+	// Nodesmith should leave every package manager on its own configuration.
+	MinimumReleaseAge *int `json:"minimumReleaseAge"`
+	// RecipeMinimumReleaseAge is retained only so version-one settings files
+	// written by older builds can still be decoded. New builds clear it on save;
+	// per-catalogue choices now live on ScaffoldRequest and in presets.
+	RecipeMinimumReleaseAge map[string]int `json:"recipeMinimumReleaseAge,omitempty"`
+}
+
+// Sources of a resolved minimum release age, most specific first.
+const (
+	ReleaseAgeSourceRequest = "request"
+	ReleaseAgeSourceRecipe  = "recipe"
+	ReleaseAgeSourceGlobal  = "global"
+	ReleaseAgeSourceUnset   = "unset"
+)
+
+// MinimumReleaseAgeResolution explains which layer supplied a recipe's cooldown
+// so the interface can show the effective value and where it came from.
+type MinimumReleaseAgeResolution struct {
+	Minutes *int   `json:"minutes"`
+	Source  string `json:"source"`
 }
 
 // Preset is a named, reusable scaffold request.

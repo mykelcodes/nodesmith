@@ -429,6 +429,14 @@ func (m *Manager) execute(ctx context.Context, jobID string) {
 }
 
 func (m *Manager) runStep(ctx context.Context, jobID string, step planner.PlanStep) (int, error) {
+	if step.Kind == planner.StepKindProjectConfig || step.Config != nil {
+		if err := writeProjectConfig(step); err != nil {
+			return -1, err
+		}
+		m.appendLog(jobID, step.ID, "stdout", step.Display)
+		return 0, nil
+	}
+
 	command := exec.Command(step.Bin, step.Args...)
 	command.Dir = step.Dir
 	overrides := make(map[string]string, len(step.Env)+1)

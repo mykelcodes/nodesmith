@@ -18,7 +18,8 @@
     "packageManagers": [
       "pnpm",
       "npm",
-      "yarn"
+      "yarn",
+      "bun"
     ],
     "tools": []
   },

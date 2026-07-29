@@ -215,6 +215,9 @@ func (service *ScaffoldService) resolvePlan(
 ) (planner.Plan, ScaffoldRequest, error) {
 	request.RecipeID = strings.TrimSpace(request.RecipeID)
 	request.PackageManager = strings.TrimSpace(request.PackageManager)
+	if err := validateMinimumReleaseAgeRequest(request); err != nil {
+		return planner.Plan{}, ScaffoldRequest{}, fmt.Errorf("configure project: %w", err)
+	}
 	if request.RecipeID == "" {
 		return planner.Plan{}, ScaffoldRequest{}, errors.New("choose a recipe before continuing")
 	}
@@ -280,14 +283,24 @@ func (service *ScaffoldService) resolvePlan(
 			)
 		}
 	}
+	settings, err := service.store.GetSettings()
+	if err != nil {
+		return planner.Plan{}, ScaffoldRequest{}, fmt.Errorf(
+			"read the minimum release age for %s: %w",
+			manifest.Name,
+			err,
+		)
+	}
+	releaseAge := resolveMinimumReleaseAge(request.MinimumReleaseAge, settings, manifest)
 	resolved, err := planner.Resolve(manifest, planner.ScaffoldRequest{
-		RecipeID:       request.RecipeID,
-		ProjectName:    request.ProjectName,
-		ParentDir:      request.ParentDir,
-		PackageManager: request.PackageManager,
-		InstallDeps:    request.InstallDeps,
-		GitInit:        request.GitInit,
-		Answers:        request.Answers,
+		RecipeID:          request.RecipeID,
+		ProjectName:       request.ProjectName,
+		ParentDir:         request.ParentDir,
+		PackageManager:    request.PackageManager,
+		InstallDeps:       request.InstallDeps,
+		GitInit:           request.GitInit,
+		MinimumReleaseAge: releaseAge.Minutes,
+		Answers:           request.Answers,
 	}, service.resolver)
 	if err != nil {
 		return planner.Plan{}, ScaffoldRequest{}, fmt.Errorf("resolve commands for %s: %w", manifest.Name, err)
@@ -330,14 +343,30 @@ func requestKey(request ScaffoldRequest) (string, error) {
 func planDTO(source planner.Plan) Plan {
 	steps := make([]PlanStep, 0, len(source.Steps))
 	for _, step := range source.Steps {
+		kind := step.Kind
+		if kind == "" {
+			kind = planner.StepKindCommand
+		}
+		var config *ProjectConfig
+		if step.Config != nil {
+			config = &ProjectConfig{
+				Path:    step.Config.Path,
+				Format:  step.Config.Format,
+				Section: step.Config.Section,
+				Key:     step.Config.Key,
+				Value:   step.Config.Value,
+			}
+		}
 		steps = append(steps, PlanStep{
 			ID:      step.ID,
+			Kind:    kind,
 			Label:   step.Label,
 			Bin:     step.Bin,
 			Args:    cloneSlice(step.Args),
 			Dir:     step.Dir,
 			Env:     step.Env,
 			Display: step.Display,
+			Config:  config,
 		})
 	}
 	return Plan{

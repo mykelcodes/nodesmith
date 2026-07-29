@@ -13,6 +13,7 @@
   ],
   "icon": "hono",
   "verifiedAt": "2026-07-28",
+  "installPolicy": "required",
   "requires": {
     "node": ">=18.0.0",
     "packageManagers": [
@@ -86,8 +87,7 @@
       },
       "args": [
         "install"
-      ],
-      "when": "installDeps"
+      ]
     },
     {
       "id": "git-init",

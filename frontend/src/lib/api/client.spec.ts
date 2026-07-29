@@ -50,6 +50,50 @@ describe('Wails v2 API boundary', () => {
 		expect(settings.editor).toBe(editor);
 	});
 
+	it('saves a new preset with the Go zero timestamp instead of an empty string', async () => {
+		let sent: { createdAt?: unknown; updatedAt?: unknown } | undefined;
+		const stub = globalThis as { window?: unknown };
+		stub.window = {
+			go: {
+				services: {
+					StoreService: {
+						SavePreset: (preset: { createdAt?: unknown; updatedAt?: unknown }) => {
+							sent = preset;
+							return Promise.resolve();
+						}
+					}
+				}
+			}
+		};
+
+		try {
+			await api.store.savePreset({
+				id: '',
+				name: 'Hono API',
+				request: {
+					recipeId: 'hono',
+					projectName: 'api',
+					parentDir: '/projects',
+					packageManager: 'pnpm',
+					installDeps: true,
+					gitInit: true,
+					minimumReleaseAge: 4320,
+					answers: {}
+				},
+				createdAt: '',
+				updatedAt: ''
+			});
+		} finally {
+			delete stub.window;
+		}
+
+		expect(sent).toMatchObject({
+			request: { minimumReleaseAge: 4320 },
+			createdAt: '0001-01-01T00:00:00Z',
+			updatedAt: '0001-01-01T00:00:00Z'
+		});
+	});
+
 	it('turns unknown rejection values into useful display text', () => {
 		expect(toErrorMessage(new Error('pnpm is missing'))).toBe('pnpm is missing');
 		expect(toErrorMessage(null)).toBe('An unexpected error occurred. Please try again.');

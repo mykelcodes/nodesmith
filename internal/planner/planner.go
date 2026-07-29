@@ -52,6 +52,11 @@ func Resolve(manifest recipe.Manifest, request ScaffoldRequest, resolver BinaryR
 		)
 	}
 
+	// Families reached across the whole plan, so a cooldown that cannot be
+	// applied exactly is reported once instead of once per step.
+	planFamilies := make(map[string]struct{}, 4)
+	pnpmBuildWarningAdded := false
+
 	for _, step := range manifest.Steps {
 		include, err := evaluateWhen(step.When, values)
 		if err != nil {
@@ -83,6 +88,12 @@ func Resolve(manifest recipe.Manifest, request ScaffoldRequest, resolver BinaryR
 		if err != nil {
 			return Plan{}, fmt.Errorf("resolve step %q args: %w", step.ID, err)
 		}
+		var pnpmBuildsRemainBlocked bool
+		args, pnpmBuildsRemainBlocked = configurePnpmInstall(binaryName, args)
+		if pnpmBuildsRemainBlocked && !pnpmBuildWarningAdded {
+			plan.Warnings = append(plan.Warnings, pnpmBlockedBuildsWarning)
+			pnpmBuildWarningAdded = true
+		}
 		if len(prefixArgs) > 0 {
 			args = append(append([]string(nil), prefixArgs...), args...)
 		}
@@ -104,6 +115,22 @@ func Resolve(manifest recipe.Manifest, request ScaffoldRequest, resolver BinaryR
 			environment[key] = step.Env[key]
 		}
 
+		// The step's own binary plus the selected package manager, because
+		// generators commonly delegate installation to it.
+		stepFamilies := make(map[string]struct{}, 2)
+		for _, name := range []string{binaryName, request.PackageManager} {
+			if family := binaryFamily(name); family != "" {
+				stepFamilies[family] = struct{}{}
+				planFamilies[family] = struct{}{}
+			}
+		}
+		if request.MinimumReleaseAge != nil {
+			// Applied after the recipe's own env so the resolved policy wins.
+			for key, value := range releaseAgeEnvironment(*request.MinimumReleaseAge, stepFamilies) {
+				environment[key] = value
+			}
+		}
+
 		planStep := PlanStep{
 			ID:    step.ID,
 			Label: step.Label,
@@ -116,12 +143,46 @@ func Resolve(manifest recipe.Manifest, request ScaffoldRequest, resolver BinaryR
 		plan.Steps = append(plan.Steps, planStep)
 	}
 
+	if request.MinimumReleaseAge != nil {
+		plan.Warnings = append(plan.Warnings, releaseAgeWarnings(*request.MinimumReleaseAge, planFamilies)...)
+		if config := releaseAgeProjectConfig(request.PackageManager, *request.MinimumReleaseAge); config != nil {
+			configStep := PlanStep{
+				ID:      "minimum-release-age-config",
+				Kind:    StepKindProjectConfig,
+				Label:   "Write package-manager security policy",
+				Dir:     projectDir,
+				Env:     map[string]string{},
+				Args:    []string{},
+				Display: releaseAgeConfigDisplay(*config),
+				Config:  config,
+			}
+			plan.Steps = insertProjectConfigStep(plan.Steps, configStep, projectDir)
+		}
+	}
+
 	hash, err := hashSteps(plan.Steps)
 	if err != nil {
 		return Plan{}, fmt.Errorf("hash resolved steps: %w", err)
 	}
 	plan.Hash = hash
 	return plan, nil
+}
+
+func insertProjectConfigStep(steps []PlanStep, configStep PlanStep, projectDir string) []PlanStep {
+	insertAt := len(steps)
+	cleanProjectDir := filepath.Clean(projectDir)
+	// Recipes create the project from their first step. Insert before the first
+	// later command that runs inside it (normally dependency installation).
+	for index := 1; index < len(steps); index++ {
+		if filepath.Clean(steps[index].Dir) == cleanProjectDir {
+			insertAt = index
+			break
+		}
+	}
+	steps = append(steps, PlanStep{})
+	copy(steps[insertAt+1:], steps[insertAt:])
+	steps[insertAt] = configStep
+	return steps
 }
 
 func resolveValues(manifest recipe.Manifest, request ScaffoldRequest, projectDir string) (map[string]any, error) {
@@ -395,12 +456,14 @@ type hashEnvironment struct {
 
 type hashStep struct {
 	ID      string            `json:"id"`
+	Kind    string            `json:"kind,omitempty"`
 	Label   string            `json:"label"`
 	Bin     string            `json:"bin"`
 	Args    []string          `json:"args"`
 	Dir     string            `json:"dir"`
 	Env     []hashEnvironment `json:"env"`
 	Display string            `json:"display"`
+	Config  *ProjectConfig    `json:"config,omitempty"`
 }
 
 func hashSteps(steps []PlanStep) (string, error) {
@@ -417,12 +480,14 @@ func hashSteps(steps []PlanStep) (string, error) {
 		}
 		canonical = append(canonical, hashStep{
 			ID:      step.ID,
+			Kind:    step.Kind,
 			Label:   step.Label,
 			Bin:     step.Bin,
 			Args:    slices.Clone(step.Args),
 			Dir:     step.Dir,
 			Env:     environment,
 			Display: step.Display,
+			Config:  step.Config,
 		})
 	}
 	data, err := json.Marshal(canonical)
