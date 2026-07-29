@@ -19,9 +19,47 @@
       "dir": ".",
       "env": {
         "CI": "1",
-        "NODE_INSTALLER": "npm"
+        "NODE_INSTALLER": "pnpm",
+        "pnpm_config_block_exotic_subdeps": "false",
+        "pnpm_config_dangerously_allow_all_builds": "true",
+        "pnpm_config_node_linker": "hoisted"
       },
       "display": "/tools/npx --yes create-electron-app@latest electron-app --template vite-typescript --skip-git --electron-version latest"
+    },
+    {
+      "id": "pnpm-build-policy",
+      "label": "Persist pnpm build policy",
+      "bin": "/tools/pnpm",
+      "args": [
+        "config",
+        "set",
+        "allowBuilds",
+        "{\"electron\":true,\"electron-winstaller\":true,\"esbuild\":true}",
+        "--json",
+        "--location=project"
+      ],
+      "dir": "electron-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/pnpm config set allowBuilds '{\"electron\":true,\"electron-winstaller\":true,\"esbuild\":true}' --json --location=project"
+    },
+    {
+      "id": "pnpm-node-linker",
+      "label": "Configure pnpm node linker",
+      "bin": "/tools/pnpm",
+      "args": [
+        "config",
+        "set",
+        "nodeLinker",
+        "hoisted",
+        "--location=project"
+      ],
+      "dir": "electron-app",
+      "env": {
+        "CI": "1"
+      },
+      "display": "/tools/pnpm config set nodeLinker hoisted --location=project"
     },
     {
       "id": "git-init",
@@ -67,5 +105,5 @@
     }
   ],
   "warnings": [],
-  "hash": "ca575680c53047d6e75170df0061627a86af67aa51a24d33607e0b54a284a312"
+  "hash": "764a76cf6a97d919424b7f9946a7aae14add866a1ac7dc6046842c6f70b93b91"
 }

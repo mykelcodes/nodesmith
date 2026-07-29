@@ -103,6 +103,7 @@ func TestValidateAdditionalStructuralRules(t *testing.T) {
 		{name: "nul env value", mutate: func(m *Manifest) { m.Steps[0].Env["BAD"] = "value\x00" }, want: "value contains a NUL byte"},
 		{name: "case-insensitive env duplicate", mutate: func(m *Manifest) { m.Steps[0].Env["ci"] = "0" }, want: "case-insensitive platforms"},
 		{name: "managed path env", mutate: func(m *Manifest) { m.Steps[0].Env["Path"] = "/untrusted" }, want: "PATH is managed by Nodesmith"},
+		{name: "unknown env variable", mutate: func(m *Manifest) { m.Steps[0].Env["TOOL"] = "${missing}" }, want: "unknown identifier"},
 		{name: "missing ci", mutate: func(m *Manifest) { delete(m.Steps[0].Env, "CI") }, want: "env.CI"},
 		{name: "missing args", mutate: func(m *Manifest) { m.Steps[0].Args = nil }, want: "args: must be an array"},
 		{name: "includes scalar", mutate: func(m *Manifest) { m.Steps[0].When = `choice includes "a"` }, want: "requires a multiselect"},

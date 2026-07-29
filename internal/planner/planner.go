@@ -112,7 +112,11 @@ func Resolve(manifest recipe.Manifest, request ScaffoldRequest, resolver BinaryR
 			if strings.EqualFold(key, "CI") || strings.EqualFold(key, "PATH") {
 				continue
 			}
-			environment[key] = step.Env[key]
+			value, err := substitute(step.Env[key], values)
+			if err != nil {
+				return Plan{}, fmt.Errorf("resolve step %q environment %q: %w", step.ID, key, err)
+			}
+			environment[key] = value
 		}
 
 		// The step's own binary plus the selected package manager, because

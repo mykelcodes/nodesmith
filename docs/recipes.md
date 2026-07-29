@@ -134,9 +134,9 @@ Nodesmith always provides:
 - `installDeps`
 - `gitInit`
 
-Use `${variable}` substitution inside a literal argv element. Substitution never performs shell
-parsing and never splits on whitespace, so `"--template ${template}"` is one incorrect argument.
-Write it as two elements: `"--template", "${template}"`.
+Use `${variable}` substitution inside a literal argv element or environment value. Substitution
+never performs shell parsing and never splits on whitespace, so `"--template ${template}"` is one
+incorrect argument. Write it as two elements: `"--template", "${template}"`.
 
 The only dynamic executable is `"${packageManager}"`. All other `bin` values must be one of:
 `bun`, `bunx`, `cargo`, `code`, `gh`, `git`, `go`, `node`, `npm`, `npx`, `pnpm`, `pnpx`,
@@ -217,6 +217,10 @@ but the pending approvals do not turn an otherwise completed scaffold into a
 failed run. Users can review and approve those scripts later with
 `pnpm approve-builds`. A recipe that supplies an explicit pnpm build-script
 policy keeps that policy unchanged.
+
+When an upstream generator performs its own pnpm install, a build-policy environment override may
+be scoped to that scaffold process. Persist a narrow `allowBuilds` map in the generated project
+afterward rather than leaving an all-builds override in project configuration.
 
 Recipes must never rely on a prompt. Verify the current generator help or upstream CLI option
 definitions, then provide the project name and every option needed to suppress questions.

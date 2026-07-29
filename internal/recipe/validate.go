@@ -154,7 +154,7 @@ func Validate(manifest Manifest) error {
 		if step.CWD != "parentDir" && step.CWD != "projectDir" {
 			return fmt.Errorf("%s.cwd: must be %q or %q", path, "parentDir", "projectDir")
 		}
-		if err := validateStepEnvironment(path+".env", step.Env); err != nil {
+		if err := validateStepEnvironment(path+".env", step.Env, known); err != nil {
 			return err
 		}
 		if step.Env["CI"] != "1" {
@@ -176,7 +176,7 @@ func Validate(manifest Manifest) error {
 	return nil
 }
 
-func validateStepEnvironment(path string, environment map[string]string) error {
+func validateStepEnvironment(path string, environment map[string]string, known map[string]FieldType) error {
 	keys := make([]string, 0, len(environment))
 	for key := range environment {
 		keys = append(keys, key)
@@ -190,6 +190,15 @@ func validateStepEnvironment(path string, environment map[string]string) error {
 		}
 		if strings.ContainsRune(environment[key], '\x00') {
 			return fmt.Errorf("%s.%s: value contains a NUL byte", path, key)
+		}
+		variables, err := Variables(environment[key])
+		if err != nil {
+			return fmt.Errorf("%s.%s: %w", path, key, err)
+		}
+		for _, identifier := range variables {
+			if _, exists := known[identifier]; !exists {
+				return fmt.Errorf("%s.%s: unknown identifier %q", path, key, identifier)
+			}
 		}
 		folded := strings.ToUpper(key)
 		if previous, duplicate := seen[folded]; duplicate {

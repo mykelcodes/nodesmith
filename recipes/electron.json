@@ -18,8 +18,7 @@
     "packageManagers": [
       "pnpm",
       "npm",
-      "yarn",
-      "bun"
+      "yarn"
     ],
     "tools": []
   },
@@ -39,7 +38,10 @@
       "cwd": "parentDir",
       "env": {
         "CI": "1",
-        "NODE_INSTALLER": "npm"
+        "NODE_INSTALLER": "${packageManager}",
+        "pnpm_config_block_exotic_subdeps": "false",
+        "pnpm_config_dangerously_allow_all_builds": "true",
+        "pnpm_config_node_linker": "hoisted"
       },
       "args": [
         "--yes",
@@ -59,6 +61,41 @@
         "--electron-version",
         "latest"
       ]
+    },
+    {
+      "id": "pnpm-build-policy",
+      "label": "Persist pnpm build policy",
+      "bin": "pnpm",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "config",
+        "set",
+        "allowBuilds",
+        "{\"electron\":true,\"electron-winstaller\":true,\"esbuild\":true}",
+        "--json",
+        "--location=project"
+      ],
+      "when": "packageManager == \"pnpm\""
+    },
+    {
+      "id": "pnpm-node-linker",
+      "label": "Configure pnpm node linker",
+      "bin": "pnpm",
+      "cwd": "projectDir",
+      "env": {
+        "CI": "1"
+      },
+      "args": [
+        "config",
+        "set",
+        "nodeLinker",
+        "hoisted",
+        "--location=project"
+      ],
+      "when": "packageManager == \"pnpm\""
     },
     {
       "id": "git-init",

@@ -222,6 +222,57 @@ func TestResolveWarnsWhenInstallPolicyIsRequired(t *testing.T) {
 	}
 }
 
+func TestResolveElectronUsesSelectedPackageManager(t *testing.T) {
+	t.Parallel()
+
+	manifest := loadBundledManifest(t, "electron")
+	plan, err := Resolve(manifest, ScaffoldRequest{
+		RecipeID:       manifest.ID,
+		ProjectName:    "desktop",
+		ParentDir:      ".",
+		PackageManager: "pnpm",
+		InstallDeps:    true,
+		Answers:        map[string]any{},
+	}, &fakeResolver{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := plan.Steps[0].Env["NODE_INSTALLER"]; got != "pnpm" {
+		t.Fatalf("NODE_INSTALLER = %q, want selected package manager %q", got, "pnpm")
+	}
+	if got := plan.Steps[0].Env["pnpm_config_block_exotic_subdeps"]; got != "false" {
+		t.Fatalf("pnpm blockExoticSubdeps override = %q, want %q for Forge compatibility", got, "false")
+	}
+	if got := plan.Steps[0].Env["pnpm_config_dangerously_allow_all_builds"]; got != "true" {
+		t.Fatalf("pnpm scaffold build policy = %q, want %q for Forge's internal install", got, "true")
+	}
+	if got := plan.Steps[0].Env["pnpm_config_node_linker"]; got != "hoisted" {
+		t.Fatalf("pnpm node linker = %q, want %q for Forge compatibility", got, "hoisted")
+	}
+	stepByID(t, plan, "pnpm-build-policy")
+	stepByID(t, plan, "pnpm-node-linker")
+
+	npmPlan, err := Resolve(manifest, ScaffoldRequest{
+		RecipeID:       manifest.ID,
+		ProjectName:    "desktop",
+		ParentDir:      ".",
+		PackageManager: "npm",
+		InstallDeps:    true,
+		Answers:        map[string]any{},
+	}, &fakeResolver{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := npmPlan.Steps[0].Env["NODE_INSTALLER"]; got != "npm" {
+		t.Fatalf("NODE_INSTALLER = %q, want selected package manager %q", got, "npm")
+	}
+	for _, step := range npmPlan.Steps {
+		if strings.HasPrefix(step.ID, "pnpm-") {
+			t.Fatalf("npm plan unexpectedly contains pnpm step %q", step.ID)
+		}
+	}
+}
+
 func TestResolveExpandsConditionsAndForEach(t *testing.T) {
 	t.Parallel()
 
