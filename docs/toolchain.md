@@ -18,12 +18,15 @@ Desktop applications launched from Finder or a Linux application menu commonly
 inherit a minimal PATH. That hides tools installed by nvm, fnm, Volta, or shell
 startup configuration.
 
-On macOS and Linux, Nodesmith asks the configured login shell for its
-environment once. This is the sole documented exception to the no-shell rule.
-The invocation is equivalent to the following explicit argv:
+On macOS and Linux, Nodesmith asks the configured interactive login shell for
+its environment once. The interactive mode includes tool managers commonly
+initialised by `.zshrc`, `.bashrc`, or equivalent shell configuration. If a
+Finder-launched macOS app receives no `SHELL`, Nodesmith uses the system
+`/bin/zsh`. This is the sole documented exception to the no-shell rule. The
+invocation is equivalent to the following explicit argv:
 
 ```text
-[$SHELL, "-l", "-c", "env"]
+[$SHELL, "-l", "-i", "-c", "env"]
 ```
 
 The command text is a constant. No project name, recipe value, PATH override, or

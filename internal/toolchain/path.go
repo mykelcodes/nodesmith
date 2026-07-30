@@ -39,13 +39,27 @@ type PathResolver struct {
 // environment. macOS and Linux perform login-shell discovery; Windows uses the
 // process PATH directly.
 func NewPathResolver() *PathResolver {
+	goos := runtime.GOOS
 	return &PathResolver{
 		processPath: os.Getenv("PATH"),
-		shell:       os.Getenv("SHELL"),
-		goos:        runtime.GOOS,
+		shell:       loginShell(os.Getenv("SHELL"), goos),
+		goos:        goos,
 		timeout:     loginShellTimeout,
 		discover:    discoverLoginShellPATH,
 	}
+}
+
+func loginShell(configured, goos string) string {
+	if configured != "" {
+		return configured
+	}
+	if goos == "darwin" {
+		// Applications launched from Finder may not receive SHELL. zsh has
+		// been the default macOS shell since Catalina and is present at this
+		// stable system path.
+		return "/bin/zsh"
+	}
+	return ""
 }
 
 // ResolvedPath returns the effective PATH. Login-shell discovery is attempted
@@ -125,7 +139,7 @@ func discoverLoginShellPATH(ctx context.Context, shell string) (string, error) {
 	// This is the sole shell invocation in the core. The command text is a
 	// constant, and the shell plus each option are supplied as distinct argv
 	// elements. No user or recipe value is interpolated into command text.
-	cmd := exec.CommandContext(ctx, shell, "-l", "-c", "env")
+	cmd := exec.CommandContext(ctx, shell, "-l", "-i", "-c", "env")
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("query login-shell environment: %w", err)

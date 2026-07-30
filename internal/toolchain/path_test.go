@@ -3,6 +3,9 @@ package toolchain
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -142,6 +145,57 @@ func TestPathResolverWindowsNeverLaunchesLoginShell(t *testing.T) {
 	}
 	if got != `C:\Program Files\node` {
 		t.Fatalf("ResolvedPath() = %q", got)
+	}
+}
+
+func TestLoginShellUsesMacOSDefaultWhenFinderOmitsShell(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		configured string
+		goos       string
+		want       string
+	}{
+		{name: "configured shell wins", configured: "/opt/homebrew/bin/fish", goos: "darwin", want: "/opt/homebrew/bin/fish"},
+		{name: "macOS Finder fallback", goos: "darwin", want: "/bin/zsh"},
+		{name: "Linux has no assumed shell", goos: "linux", want: ""},
+		{name: "Windows has no assumed shell", goos: "windows", want: ""},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			if got := loginShell(test.configured, test.goos); got != test.want {
+				t.Fatalf("loginShell(%q, %q) = %q, want %q", test.configured, test.goos, got, test.want)
+			}
+		})
+	}
+}
+
+func TestDiscoverLoginShellPATHUsesInteractiveLoginShell(t *testing.T) {
+	t.Parallel()
+	if runtime.GOOS == "windows" {
+		t.Skip("executable shell fixture requires Unix")
+	}
+
+	shell := filepath.Join(t.TempDir(), "test-shell")
+	script := `#!/bin/sh
+if [ "$1" != "-l" ] || [ "$2" != "-i" ] || [ "$3" != "-c" ] || [ "$4" != "env" ]; then
+	exit 2
+fi
+printf 'PATH=/interactive/bin:/usr/bin\n'
+`
+	if err := os.WriteFile(shell, []byte(script), 0o700); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := discoverLoginShellPATH(context.Background(), shell)
+	if err != nil {
+		t.Fatalf("discoverLoginShellPATH() error = %v", err)
+	}
+	if got != "/interactive/bin:/usr/bin" {
+		t.Fatalf("discoverLoginShellPATH() = %q", got)
 	}
 }
 
