@@ -3,6 +3,7 @@ package runner
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -106,11 +107,14 @@ func TestWriteProjectConfigCreatesAndUpdatesTheGeneratedProjectFile(t *testing.T
 		!strings.Contains(string(content), "minimumReleaseAge: 10080") {
 		t.Fatalf("pnpm-workspace.yaml = %q, want existing content and release age", content)
 	}
-	info, err := os.Stat(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := info.Mode().Perm(); got != 0o640 {
-		t.Fatalf("file mode = %o, want existing 640", got)
+	// Windows does not expose or preserve POSIX permission bits.
+	if runtime.GOOS != "windows" {
+		info, err := os.Stat(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := info.Mode().Perm(); got != 0o640 {
+			t.Fatalf("file mode = %o, want existing 640", got)
+		}
 	}
 }

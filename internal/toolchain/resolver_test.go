@@ -20,12 +20,26 @@ func TestResolveInPathFindsExecutableAndSkipsNonExecutable(t *testing.T) {
 	if err := os.WriteFile(want, []byte("executable marker"), 0o700); err != nil {
 		t.Fatal(err)
 	}
+	stat := func(path string) (os.FileInfo, error) {
+		info, err := os.Stat(path)
+		if err != nil {
+			return nil, err
+		}
+		mode := info.Mode() &^ 0o111
+		if path == want {
+			mode |= 0o111
+		}
+		return fileInfoWithMode{
+			FileInfo: info,
+			mode:     mode,
+		}, nil
+	}
 
 	got, err := resolveInPath(
 		"node",
 		first+string(os.PathListSeparator)+second,
 		"linux",
-		os.Stat,
+		stat,
 	)
 	if err != nil {
 		t.Fatalf("resolveInPath() error = %v", err)
@@ -34,6 +48,15 @@ func TestResolveInPathFindsExecutableAndSkipsNonExecutable(t *testing.T) {
 	if got != want {
 		t.Fatalf("resolveInPath() = %q, want %q", got, want)
 	}
+}
+
+type fileInfoWithMode struct {
+	os.FileInfo
+	mode os.FileMode
+}
+
+func (info fileInfoWithMode) Mode() os.FileMode {
+	return info.mode
 }
 
 func TestResolveInPathFindsWindowsCommandAndPowerShellShims(t *testing.T) {

@@ -87,9 +87,19 @@ linting and unit tests, binding freshness checks, and native Wails builds on mac
 Linux. macOS produces a universal application; Windows and Linux produce amd64 builds. Each run
 installs the Playwright Chromium version selected by the frontend lockfile; Linux also installs its
 browser system dependencies. Branch and pull-request runs upload short-lived commit artifacts. A
-`v*` tag uploads 90-day artifacts named
+`v*` tag uploads 90-day workflow artifacts named
 `nodesmith-<tag>-darwin-universal`, `nodesmith-<tag>-windows-amd64`, and
-`nodesmith-<tag>-linux-amd64`.
+`nodesmith-<tag>-linux-amd64`. After lint and all platform builds pass, the tag also publishes a
+GitHub Release with generated release notes and these download assets:
+
+- `nodesmith-<tag>-darwin-universal.zip`
+- `nodesmith-<tag>-windows-amd64.zip`
+- `nodesmith-<tag>-linux-amd64.tar.gz`
+- `SHA256SUMS`
+
+Push a version tag such as `v1.0.0` to create the corresponding release. The macOS archive contains
+the universal application bundle, the Windows archive contains the amd64 executable, and the Linux
+archive contains the amd64 binary.
 
 `.github/workflows/nightly-recipes.yml` has two layers:
 

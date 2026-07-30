@@ -168,6 +168,40 @@ jobs:
         shell: bash
         run: wails build -clean -trimpath -platform "${{ matrix.platform }}"
 
+      - name: Package macOS release asset
+        if: github.ref_type == 'tag' && runner.os == 'macOS'
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          mkdir -p release-assets
+          ditto -c -k --sequesterRsrc --keepParent \
+            build/bin/Nodesmith.app \
+            "release-assets/nodesmith-${RELEASE_TAG}-darwin-universal.zip"
+
+      - name: Package Windows release asset
+        if: github.ref_type == 'tag' && runner.os == 'Windows'
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          New-Item -ItemType Directory -Force release-assets
+          Compress-Archive `
+            -LiteralPath build/bin/nodesmith.exe `
+            -DestinationPath "release-assets/nodesmith-$env:RELEASE_TAG-windows-amd64.zip"
+
+      - name: Package Linux release asset
+        if: github.ref_type == 'tag' && runner.os == 'Linux'
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          mkdir -p release-assets
+          tar --create --gzip \
+            --file "release-assets/nodesmith-${RELEASE_TAG}-linux-amd64.tar.gz" \
+            --directory build/bin \
+            nodesmith
+
       - name: Upload commit desktop artifact
         if: github.ref_type != 'tag'
         uses: actions/upload-artifact@v7
@@ -182,6 +216,43 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: nodesmith-${{ github.ref_name }}-${{ matrix.artifact }}
-          path: build/bin/
+          path: release-assets/
           if-no-files-found: error
           retention-days: 90
+
+  release:
+    name: Publish GitHub Release
+    if: github.ref_type == 'tag'
+    needs:
+      - go-lint
+      - test-and-build
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Download packaged builds
+        uses: actions/download-artifact@v8
+        with:
+          pattern: nodesmith-${{ github.ref_name }}-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Generate SHA-256 checksums
+        shell: bash
+        working-directory: release-assets
+        run: sha256sum nodesmith-* > SHA256SUMS
+
+      - name: Publish release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" \
+            release-assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --generate-notes \
+            --title "Nodesmith $RELEASE_TAG"

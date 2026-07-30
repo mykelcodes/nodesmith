@@ -1,6 +1,7 @@
 package planner
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -90,7 +91,10 @@ func TestResolveBundledRecipeGoldens(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if string(got) != string(want) {
+			// Git may check text fixtures out with CRLF on Windows, while
+			// json.MarshalIndent always emits LF.
+			want = bytes.ReplaceAll(want, []byte("\r\n"), []byte("\n"))
+			if !bytes.Equal(got, want) {
 				t.Fatalf(
 					"resolved %s plan changed\n--- got ---\n%s\n--- want ---\n%s",
 					manifest.Name,

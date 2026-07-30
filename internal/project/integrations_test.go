@@ -8,6 +8,26 @@ import (
 	"testing"
 )
 
+type fileInfoWithMode struct {
+	os.FileInfo
+	mode os.FileMode
+}
+
+func (info fileInfoWithMode) Mode() os.FileMode {
+	return info.mode
+}
+
+func statExecutable(path string) (os.FileInfo, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+	return fileInfoWithMode{
+		FileInfo: info,
+		mode:     info.Mode() | 0o111,
+	}, nil
+}
+
 func TestSupportedEditorsReturnsCopy(t *testing.T) {
 	t.Parallel()
 
@@ -136,7 +156,7 @@ func TestIntegrationLauncherResolvesKnownBinaryAndPreservesArgv(t *testing.T) {
 			gotPath = pathValue
 			return nil
 		},
-		stat: os.Stat,
+		stat: statExecutable,
 	}
 	hostileDirectory := `/tmp/project; echo not-run`
 	err := launcher.launch(integrationCommand{
@@ -175,7 +195,7 @@ func TestIntegrationLauncherStartsAbsoluteCustomExecutableWithoutShell(t *testin
 			gotArgs = append([]string(nil), args...)
 			return nil
 		},
-		stat: os.Stat,
+		stat: statExecutable,
 	}
 	projectDirectory := `/tmp/project; still-not-shell`
 	if err := launcher.launch(integrationCommand{
