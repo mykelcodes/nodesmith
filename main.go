@@ -16,6 +16,7 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/mac"
 )
 
 //go:embed all:frontend/build
@@ -85,6 +86,9 @@ func main() {
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 9, G: 11, B: 16, A: 1},
+		Mac: &mac.Options{
+			DisableZoom: false,
+		},
 		OnStartup: func(ctx context.Context) {
 			bridge.Set(ctx)
 		},

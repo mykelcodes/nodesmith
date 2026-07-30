@@ -66,6 +66,7 @@
 			if (snapshot.request?.recipeId === recipe.id) {
 				request = {
 					...snapshot.request,
+					parentDir: settings.defaultParentDir,
 					installDeps: recipe.installPolicy === 'required' ? true : snapshot.request.installDeps,
 					minimumReleaseAge: snapshot.request.minimumReleaseAge ?? null
 				};

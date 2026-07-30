@@ -93,6 +93,16 @@ export const wizard = {
 			...(requestChanged ? { plan: null, job: null, done: null } : {})
 		});
 	},
+	syncDefaultParentDir(parentDir: string) {
+		const current = get(store);
+		if (!current.request || current.request.parentDir === parentDir) return;
+		replace({
+			request: { ...current.request, parentDir },
+			plan: null,
+			job: null,
+			done: null
+		});
+	},
 	setPlan(plan: Plan) {
 		replace({ plan, job: null, done: null });
 	},

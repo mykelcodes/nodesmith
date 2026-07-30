@@ -11,6 +11,7 @@
 		isBuiltInEditor,
 		validateCustomEditorPath
 	} from '$lib/settings/editor';
+	import { wizard } from '$lib/stores';
 	import { applyTheme } from '$lib/theme/theme';
 
 	const editorOptions = [
@@ -101,6 +102,7 @@
 		saving = true;
 		try {
 			await api.store.saveSettings(settings);
+			wizard.syncDefaultParentDir(settings.defaultParentDir);
 			applyTheme(settings.theme, true);
 			if (settings.pathOverride.trim()) {
 				await api.toolchain.setPathOverride(settings.pathOverride);

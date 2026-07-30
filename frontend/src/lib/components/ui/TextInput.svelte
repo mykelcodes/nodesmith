@@ -48,7 +48,7 @@
 		{type}
 		bind:value
 		aria-invalid={invalid || undefined}
-		class={`h-full min-w-0 flex-1 border-0 bg-transparent px-3 text-ink outline-none placeholder:text-ink-faint disabled:cursor-not-allowed disabled:opacity-50 ${leading ? 'pl-2' : ''} ${trailing ? 'pr-2' : ''} ${inputClass}`}
+		class={`h-full min-w-0 flex-1 rounded-[inherit] border-0 bg-transparent px-3 text-ink outline-none placeholder:text-ink-faint disabled:cursor-not-allowed disabled:opacity-50 ${leading ? 'pl-2' : ''} ${trailing ? 'pr-2' : ''} ${inputClass}`}
 	/>
 	{#if trailing}
 		<span class="mr-3 flex shrink-0 items-center text-ink-faint">

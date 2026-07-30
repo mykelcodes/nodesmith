@@ -144,4 +144,20 @@ describe('mocked Wails wizard route path', () => {
 		expect(wizard.snapshot.job).toBeNull();
 		expect(wizard.snapshot.done).toBeNull();
 	});
+
+	it('keeps a cached configuration aligned with the default parent directory', () => {
+		wizard.reset();
+		wizard.selectRecipe(recipe);
+		wizard.setRequest(request);
+		wizard.setPlan(plan);
+		wizard.setJob(runningJob);
+		wizard.setDone(done);
+
+		wizard.syncDefaultParentDir('/workspace');
+
+		expect(wizard.snapshot.request?.parentDir).toBe('/workspace');
+		expect(wizard.snapshot.plan).toBeNull();
+		expect(wizard.snapshot.job).toBeNull();
+		expect(wizard.snapshot.done).toBeNull();
+	});
 });

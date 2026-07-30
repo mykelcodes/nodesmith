@@ -100,7 +100,7 @@
 		</p>
 	</div>
 	<Button variant="secondary" onclick={() => load(true)} loading={rescanning}>
-		<Icon name="refresh" class="size-4" />
+		{#if !rescanning}<Icon name="refresh" class="size-4" />{/if}
 		Rescan tools
 	</Button>
 </header>

@@ -23,7 +23,7 @@
 </script>
 
 <article
-	class="group flex min-h-64 min-w-0 flex-col rounded-panel border border-line bg-panel/80 p-5 shadow-sm transition-[transform,border-color,box-shadow,background-color] duration-200 ease-out-smooth hover:-translate-y-0.5 hover:border-line-strong hover:bg-panel hover:shadow-panel"
+	class="group flex h-full min-h-64 min-w-0 flex-col rounded-panel border border-line bg-panel/80 p-5 shadow-sm transition-[transform,border-color,box-shadow,background-color] duration-200 ease-out-smooth hover:-translate-y-0.5 hover:border-line-strong hover:bg-panel hover:shadow-panel"
 >
 	<div class="flex items-start justify-between gap-4">
 		<div

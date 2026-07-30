@@ -8,5 +8,4 @@
   <rect width="32" height="32" rx="8" fill="#0F131B"/>
   <path d="M16 5.25 26 10.9v10.2L16 26.75 6 21.1V10.9L16 5.25Z" fill="none" stroke="url(#nodesmith-gradient)" stroke-linejoin="round" stroke-width="2.2"/>
   <path d="m11.3 13.2 4.7-2.65 4.7 2.65v5.6L16 21.45l-4.7-2.65v-5.6Z" fill="none" stroke="#F8FAFF" stroke-linejoin="round" stroke-width="2"/>
-  <path d="m11.3 13.2 4.7 2.65 4.7-2.65M16 15.85v5.6" fill="none" stroke="#F8FAFF" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
 </svg>

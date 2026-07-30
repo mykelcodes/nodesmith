@@ -2,9 +2,15 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import type { RouteId } from '$app/types';
-	import type { Snippet } from 'svelte';
+	import { onMount, type Snippet } from 'svelte';
+	import {
+		WindowFullscreen,
+		WindowIsFullscreen,
+		WindowUnfullscreen
+	} from '$lib/wailsjs/runtime/runtime.js';
 	import Icon from './icons/Icon.svelte';
 	import type { IconName } from './icons/icon-data';
+	import Button from './ui/Button.svelte';
 
 	interface NavItem {
 		label: string;
@@ -21,6 +27,14 @@
 	interface Props {
 		children: Snippet;
 	}
+
+	type FullscreenRuntimeWindow = Window & {
+		runtime?: {
+			WindowFullscreen?: unknown;
+			WindowIsFullscreen?: unknown;
+			WindowUnfullscreen?: unknown;
+		};
+	};
 
 	const sections: readonly NavSection[] = [
 		{
@@ -41,6 +55,46 @@
 	];
 
 	let { children }: Props = $props();
+	let fullscreen = $state(false);
+	let fullscreenAvailable = $state(true);
+
+	function hasNativeFullscreen(): boolean {
+		const runtime = (window as FullscreenRuntimeWindow).runtime;
+		return (
+			typeof runtime?.WindowFullscreen === 'function' &&
+			typeof runtime.WindowIsFullscreen === 'function' &&
+			typeof runtime.WindowUnfullscreen === 'function'
+		);
+	}
+
+	async function syncFullscreenState() {
+		if (hasNativeFullscreen()) {
+			try {
+				fullscreen = await WindowIsFullscreen();
+			} catch {
+				fullscreenAvailable = false;
+			}
+			return;
+		}
+		fullscreen = Boolean(document.fullscreenElement);
+	}
+
+	async function toggleFullscreen() {
+		if (hasNativeFullscreen()) {
+			const active = await WindowIsFullscreen();
+			if (active) WindowUnfullscreen();
+			else WindowFullscreen();
+			fullscreen = !active;
+			return;
+		}
+
+		if (document.fullscreenElement) {
+			await document.exitFullscreen();
+		} else {
+			await document.documentElement.requestFullscreen();
+		}
+		fullscreen = Boolean(document.fullscreenElement);
+	}
 
 	function isActive(item: NavItem) {
 		const routeId = page.route.id;
@@ -48,6 +102,31 @@
 		if (item.exact) return routeId === item.href;
 		return routeId === item.href || routeId.startsWith(`${item.href}/`);
 	}
+
+	onMount(() => {
+		fullscreenAvailable = hasNativeFullscreen() || document.fullscreenEnabled;
+		const sync = () => void syncFullscreenState();
+		const handleKeydown = (event: KeyboardEvent) => {
+			const shortcut =
+				event.key === 'F11' || (event.key.toLowerCase() === 'f' && event.ctrlKey && event.metaKey);
+			if (!shortcut || !fullscreenAvailable) return;
+			event.preventDefault();
+			void toggleFullscreen();
+		};
+
+		window.addEventListener('focus', sync);
+		window.addEventListener('resize', sync);
+		window.addEventListener('keydown', handleKeydown);
+		document.addEventListener('fullscreenchange', sync);
+		void syncFullscreenState();
+
+		return () => {
+			window.removeEventListener('focus', sync);
+			window.removeEventListener('resize', sync);
+			window.removeEventListener('keydown', handleKeydown);
+			document.removeEventListener('fullscreenchange', sync);
+		};
+	});
 </script>
 
 <div class="relative h-dvh min-h-[34rem] overflow-hidden bg-canvas text-ink">
@@ -86,6 +165,22 @@
 			</a>
 
 			<div class="flex items-center gap-2 text-xs font-medium text-ink-faint" data-wails-no-drag>
+				<Button
+					variant="ghost"
+					size="icon"
+					class="size-8 rounded-lg"
+					onclick={toggleFullscreen}
+					disabled={!fullscreenAvailable}
+					aria-label={fullscreen ? 'Exit full screen' : 'Enter full screen'}
+					title={fullscreen ? 'Exit full screen (F11)' : 'Enter full screen (F11)'}
+				>
+					<Icon
+						name={fullscreen ? 'fullscreenExit' : 'fullscreen'}
+						class="size-4"
+						strokeWidth={1.7}
+					/>
+				</Button>
+				<span class="mx-0.5 h-4 w-px bg-line" aria-hidden="true"></span>
 				<span class="size-1.5 rounded-full bg-success shadow-[0_0_0_3px_var(--ns-success-soft)]"
 				></span>
 				<span class="hidden sm:inline">Local only</span>

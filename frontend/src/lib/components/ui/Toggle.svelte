@@ -44,12 +44,38 @@
 			class="peer sr-only"
 		/>
 		<span
-			class="h-5.5 w-10 rounded-full border border-line-strong bg-overlay shadow-inner transition-[background-color,border-color,box-shadow] duration-200 ease-out-smooth peer-checked:border-brand peer-checked:bg-brand peer-focus-visible:ring-3 peer-focus-visible:ring-brand/25 peer-disabled:cursor-not-allowed"
+			class="toggle-track h-5.5 w-10 rounded-full border border-line-strong bg-overlay shadow-inner peer-checked:border-brand peer-checked:bg-brand peer-focus-visible:ring-3 peer-focus-visible:ring-brand/25 peer-disabled:cursor-not-allowed"
 			aria-hidden="true"
 		></span>
 		<span
-			class="pointer-events-none absolute top-1 left-1 size-3.5 rounded-full bg-ink-muted shadow-sm transition-[transform,background-color] duration-200 ease-out-smooth peer-checked:translate-x-4.5 peer-checked:bg-white"
+			class="toggle-thumb pointer-events-none absolute top-1 left-1 size-3.5 rounded-full bg-ink-muted shadow-sm peer-checked:bg-white"
 			aria-hidden="true"
 		></span>
 	</span>
 </label>
+
+<style>
+	.toggle-track {
+		transition:
+			background-color 220ms var(--ns-ease-out),
+			border-color 220ms var(--ns-ease-out),
+			box-shadow 220ms var(--ns-ease-out);
+	}
+
+	.toggle-thumb {
+		--toggle-offset: 0rem;
+		transform: translateX(var(--toggle-offset));
+		transition:
+			transform 240ms var(--ns-ease-out),
+			background-color 180ms ease-out,
+			box-shadow 180ms ease-out;
+	}
+
+	input:checked ~ .toggle-thumb {
+		--toggle-offset: 1.125rem;
+	}
+
+	input:active ~ .toggle-thumb {
+		transform: translateX(var(--toggle-offset)) scale(0.86);
+	}
+</style>

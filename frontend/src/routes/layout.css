@@ -35,6 +35,11 @@ a {
 	outline-offset: 3px;
 }
 
+:where(button, input, select, textarea):focus-visible {
+	/* Form controls draw their rounded focus indicator with a ring. */
+	outline: none;
+}
+
 ::selection {
 	background: color-mix(in srgb, var(--ns-brand) 35%, transparent);
 	color: var(--ns-ink);

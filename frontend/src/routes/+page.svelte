@@ -259,9 +259,9 @@
 		</EmptyState>
 	</div>
 {:else}
-	<div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+	<div class="mt-6 grid auto-rows-fr gap-4 md:grid-cols-2 xl:grid-cols-3">
 		{#each filteredRecipes as recipe (recipe.id)}
-			<div class={selectingId === recipe.id ? 'pointer-events-none opacity-60' : ''}>
+			<div class={`h-full ${selectingId === recipe.id ? 'pointer-events-none opacity-60' : ''}`}>
 				<RecipeCard {recipe} onSelect={selectRecipe} />
 			</div>
 		{/each}
