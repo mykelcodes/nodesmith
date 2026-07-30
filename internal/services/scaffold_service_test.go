@@ -81,7 +81,7 @@ func TestScaffoldServiceRequiresReviewAndRecordsSuccessfulRun(t *testing.T) {
 }
 
 func TestScaffoldServiceKeepsOnlyLatestReviewedRequest(t *testing.T) {
-	service, _ := newScaffoldServiceTestHarness(t)
+	service, storeService := newScaffoldServiceTestHarness(t)
 	first := ScaffoldRequest{
 		RecipeID:       "service-test",
 		ProjectName:    "first",
@@ -115,6 +115,7 @@ func TestScaffoldServiceKeepsOnlyLatestReviewedRequest(t *testing.T) {
 	if final := waitForServiceJob(t, service, job.ID); final.State != string(runner.StateSuccess) {
 		t.Fatalf("second job = %#v, want success", final)
 	}
+	waitForHistory(t, storeService, job.ID)
 }
 
 func TestScaffoldServiceDoesNotSilentlyRenameWhitespace(t *testing.T) {
