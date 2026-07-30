@@ -113,6 +113,7 @@ tasks:
       CGO_LDFLAGS: "{{.WAILS_CGO_LDFLAGS}}"
     cmds:
       - "{{.WAILS}} generate module"
+      - node frontend/scripts/normalize-wails-bindings.mjs
 
   bindings:check:
     desc: Regenerate bindings and fail when committed output is stale

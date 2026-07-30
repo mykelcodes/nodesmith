@@ -161,6 +161,7 @@ jobs:
         shell: bash
         run: |
           wails generate module
+          node frontend/scripts/normalize-wails-bindings.mjs
           git diff --exit-code -- frontend/src/lib/wailsjs
 
       - name: Build desktop application
