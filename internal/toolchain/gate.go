@@ -69,28 +69,25 @@ func EvaluateRequirements(toolchain Toolchain, requirements Requirements) GateRe
 		}
 	}
 
+	// requires.tools carries no version constraint, so these are presence
+	// checks. A tool that is present but whose version could not be probed
+	// stays usable: slow first runs are ordinary — corepack downloads the
+	// package manager on first invocation, and on-access virus scanning adds
+	// seconds to a cold launch. Gating on that would disable a recipe and blame
+	// the user's tool. The probe error is reported on the toolchain page
+	// instead, via Tool.Error.
 	for _, name := range requirements.Tools {
 		tool, found := toolchain.Lookup(name)
 		switch {
-		case !found:
+		case !found, !tool.Present && tool.Error == "":
 			result.Reasons = append(
 				result.Reasons,
 				fmt.Sprintf("required tool %s was not found", name),
-			)
-		case tool.Error != "":
-			result.Reasons = append(
-				result.Reasons,
-				fmt.Sprintf("required tool %s could not be used: %s", name, tool.Error),
 			)
 		case !tool.Present:
 			result.Reasons = append(
 				result.Reasons,
-				fmt.Sprintf("required tool %s was not found", name),
-			)
-		case tool.Version == "":
-			result.Reasons = append(
-				result.Reasons,
-				fmt.Sprintf("required tool %s has no usable version", name),
+				fmt.Sprintf("required tool %s could not be used: %s", name, tool.Error),
 			)
 		}
 	}
@@ -99,15 +96,13 @@ func EvaluateRequirements(toolchain Toolchain, requirements Requirements) GateRe
 		unusable := make([]string, 0, len(requirements.PackageManagers))
 		for _, name := range requirements.PackageManagers {
 			tool, found := toolchain.Lookup(name)
+			// As with tools above, an unprobed version does not make a package
+			// manager unusable — only being absent or uninvocable does.
 			switch {
-			case !found:
+			case !found, !tool.Present && tool.Error == "":
 				unusable = append(unusable, name+" (not found)")
-			case tool.Error != "":
-				unusable = append(unusable, name+" ("+tool.Error+")")
 			case !tool.Present:
-				unusable = append(unusable, name+" (not found)")
-			case tool.Version == "":
-				unusable = append(unusable, name+" (version unavailable)")
+				unusable = append(unusable, name+" ("+tool.Error+")")
 			default:
 				result.PackageManager = name
 			}

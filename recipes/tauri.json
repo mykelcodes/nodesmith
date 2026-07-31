@@ -11,7 +11,7 @@
     "tauri"
   ],
   "icon": "tauri",
-  "verifiedAt": "2026-07-28",
+  "verifiedAt": "2026-07-31",
   "requires": {
     "node": ">=18.0.0",
     "packageManagers": [

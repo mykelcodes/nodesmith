@@ -106,8 +106,8 @@ func TestBuildSmokePlanUsesNativeResolutionAndExactArgv(t *testing.T) {
 	if step.Bin != "/tools/npm" || !reflect.DeepEqual(step.Args, wantArgs) {
 		t.Fatalf("resolved command = %q %#v, want /tools/npm %#v", step.Bin, step.Args, wantArgs)
 	}
-	if step.Env["CI"] != "1" || step.Env["CUSTOM"] != "value" {
-		t.Fatalf("environment = %#v, want enforced CI=1 and CUSTOM=value", step.Env)
+	if step.Env["CI"] != "true" || step.Env["CUSTOM"] != "value" {
+		t.Fatalf("environment = %#v, want enforced CI=true and CUSTOM=value", step.Env)
 	}
 	if !strings.Contains(step.Display, `"value with spaces"`) {
 		t.Fatalf("display = %q, want unsplit spaced argument", step.Display)

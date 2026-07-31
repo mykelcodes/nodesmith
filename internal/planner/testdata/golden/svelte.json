@@ -16,7 +16,7 @@
       ],
       "dir": ".",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/npx --yes create-vite@latest svelte-app --template svelte-ts --no-interactive"
     },
@@ -30,7 +30,7 @@
       ],
       "dir": "svelte-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/pnpm install --config.strict-dep-builds=false"
     },
@@ -43,7 +43,7 @@
       ],
       "dir": "svelte-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git init"
     },
@@ -57,7 +57,7 @@
       ],
       "dir": "svelte-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git add --all"
     },
@@ -72,7 +72,7 @@
       ],
       "dir": "svelte-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git commit -m 'Initial commit'"
     }
@@ -80,5 +80,5 @@
   "warnings": [
     "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
   ],
-  "hash": "5d018c970b5d55a3185e93b52bd3df943a191226d09e4a56bacd008d8abf5602"
+  "hash": "1548e260c4c9e3135fe4321639cff93664e2562f1dc23e69a9c53197687bd142"
 }

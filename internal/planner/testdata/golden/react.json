@@ -16,7 +16,7 @@
       ],
       "dir": ".",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/npx --yes create-vite@latest react-app --template react-ts --no-interactive"
     },
@@ -30,7 +30,7 @@
       ],
       "dir": "react-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/pnpm install --config.strict-dep-builds=false"
     },
@@ -43,7 +43,7 @@
       ],
       "dir": "react-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git init"
     },
@@ -57,7 +57,7 @@
       ],
       "dir": "react-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git add --all"
     },
@@ -72,7 +72,7 @@
       ],
       "dir": "react-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git commit -m 'Initial commit'"
     }
@@ -80,5 +80,5 @@
   "warnings": [
     "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
   ],
-  "hash": "619d63e3c92cadc0fdd391f37314b943cdc97d39b8a8fb1905cb09701bbbedaf"
+  "hash": "688ba95eafdd589f2efd0ea6a5c4ba4c7e06a03625db7d963b78cb2e5e65c0f4"
 }

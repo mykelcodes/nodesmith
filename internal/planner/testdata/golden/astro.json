@@ -20,7 +20,7 @@
       ],
       "dir": ".",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/npx --yes create-astro@latest astro-app --template minimal --yes --no-install --no-git --no-ai --skip-houston"
     },
@@ -34,7 +34,7 @@
       ],
       "dir": "astro-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/pnpm install --config.strict-dep-builds=false"
     },
@@ -47,7 +47,7 @@
       ],
       "dir": "astro-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git init"
     },
@@ -61,7 +61,7 @@
       ],
       "dir": "astro-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git add --all"
     },
@@ -76,7 +76,7 @@
       ],
       "dir": "astro-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git commit -m 'Initial commit'"
     }
@@ -84,5 +84,5 @@
   "warnings": [
     "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
   ],
-  "hash": "2996387598c0e62cc884c47cecd230bb9753146684301c642dd59ea4812f3e9c"
+  "hash": "5ab13d9b037138a00c9e6e080feb0bd3c7cc2e7dcef4682d9e55ca6d1445dc2e"
 }

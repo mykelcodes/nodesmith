@@ -58,34 +58,19 @@ func TestEvaluateRequirementsReportsEveryBlockingReason(t *testing.T) {
 	}
 }
 
-func TestEvaluateRequirementsRejectsPresentButUnusableTools(t *testing.T) {
+func TestEvaluateRequirementsRejectsUninvocableTools(t *testing.T) {
 	t.Parallel()
 
+	// Detection reports a tool that resolved on PATH but cannot be invoked —
+	// a Windows package-manager shim with no JavaScript entrypoint — as not
+	// present, carrying the reason.
 	detected := Toolchain{
 		Tools: map[string]Tool{
-			"node": {
-				Name:    "node",
-				Present: true,
-				Error:   "node version probe failed",
-			},
-			"npm": {
-				Name:    "npm",
-				Present: true,
-				Error:   "npm shim could not be invoked",
-			},
-			"pnpm": {
-				Name:    "pnpm",
-				Present: true,
-			},
-			"git": {
-				Name:    "git",
-				Present: true,
-				Error:   "git version probe failed",
-			},
-			"cargo": {
-				Name:    "cargo",
-				Present: true,
-			},
+			"node":  {Name: "node", Present: true, Version: "22.1.0"},
+			"npm":   {Name: "npm", Error: "npm shim could not be invoked"},
+			"pnpm":  {Name: "pnpm", Error: "pnpm shim could not be invoked"},
+			"git":   {Name: "git", Error: "git shim could not be invoked"},
+			"cargo": {Name: "cargo", Present: true, Version: "1.80.0"},
 		},
 	}
 	result := EvaluateRequirements(detected, Requirements{
@@ -94,16 +79,44 @@ func TestEvaluateRequirementsRejectsPresentButUnusableTools(t *testing.T) {
 		Tools:           []string{"git", "cargo"},
 	})
 	want := []string{
-		"node was found but could not be used: node version probe failed",
-		"required tool git could not be used: git version probe failed",
-		"required tool cargo has no usable version",
-		"no supported package manager is usable: npm (npm shim could not be invoked), pnpm (version unavailable)",
+		"required tool git could not be used: git shim could not be invoked",
+		"no supported package manager is usable: " +
+			"npm (npm shim could not be invoked), pnpm (pnpm shim could not be invoked)",
 	}
 	if result.Available {
 		t.Fatal("EvaluateRequirements() unexpectedly available")
 	}
 	if !reflect.DeepEqual(result.Reasons, want) {
 		t.Fatalf("Reasons = %#v, want %#v", result.Reasons, want)
+	}
+}
+
+func TestEvaluateRequirementsAllowsPresentToolsWithUnprobedVersion(t *testing.T) {
+	t.Parallel()
+
+	// A slow first run leaves a tool present with no version: corepack
+	// downloads the package manager on first invocation, and on-access virus
+	// scanning adds seconds to a cold launch. requires.tools and
+	// requires.packageManagers are presence checks, so these must still be
+	// satisfied rather than silently disabling the recipe.
+	detected := Toolchain{
+		Tools: map[string]Tool{
+			"node":  {Name: "node", Present: true, Version: "22.1.0"},
+			"pnpm":  {Name: "pnpm", Present: true, Error: "pnpm version probe failed"},
+			"git":   {Name: "git", Present: true},
+			"cargo": {Name: "cargo", Present: true, Error: "cargo version probe failed"},
+		},
+	}
+	result := EvaluateRequirements(detected, Requirements{
+		Node:            ">=20.0.0",
+		PackageManagers: []string{"pnpm"},
+		Tools:           []string{"git", "cargo"},
+	})
+	if !result.Available {
+		t.Fatalf("EvaluateRequirements() = %#v, want available", result)
+	}
+	if result.PackageManager != "pnpm" {
+		t.Fatalf("PackageManager = %q, want %q", result.PackageManager, "pnpm")
 	}
 }
 

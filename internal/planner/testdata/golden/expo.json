@@ -18,7 +18,7 @@
       ],
       "dir": ".",
       "env": {
-        "CI": "1",
+        "CI": "true",
         "EXPO_NO_TELEMETRY": "1"
       },
       "display": "/tools/npx --yes create-expo-app@latest expo-app --template default --yes --no-install --no-agents-md"
@@ -33,7 +33,7 @@
       ],
       "dir": "expo-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/pnpm install --config.strict-dep-builds=false"
     },
@@ -46,7 +46,7 @@
       ],
       "dir": "expo-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git init"
     },
@@ -60,7 +60,7 @@
       ],
       "dir": "expo-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git add --all"
     },
@@ -75,7 +75,7 @@
       ],
       "dir": "expo-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git commit -m 'Initial commit'"
     }
@@ -83,5 +83,5 @@
   "warnings": [
     "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
   ],
-  "hash": "c680077ea317a1b4356386e788dd95f9478fc1c9368b9aca04b9b619683d8460"
+  "hash": "90b60016f15619e27339beef609a80b79c4187a2e61754ea0061e172d5719cc7"
 }

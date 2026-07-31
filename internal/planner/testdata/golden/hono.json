@@ -13,27 +13,14 @@
         "--template",
         "nodejs",
         "--pm",
-        "pnpm"
+        "pnpm",
+        "--install"
       ],
       "dir": ".",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
-      "display": "/tools/npx --yes create-hono@latest hono-app --template nodejs --pm pnpm"
-    },
-    {
-      "id": "install",
-      "label": "Install dependencies",
-      "bin": "/tools/pnpm",
-      "args": [
-        "install",
-        "--config.strict-dep-builds=false"
-      ],
-      "dir": "hono-app",
-      "env": {
-        "CI": "1"
-      },
-      "display": "/tools/pnpm install --config.strict-dep-builds=false"
+      "display": "/tools/npx --yes create-hono@latest hono-app --template nodejs --pm pnpm --install"
     },
     {
       "id": "git-init",
@@ -44,7 +31,7 @@
       ],
       "dir": "hono-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git init"
     },
@@ -58,7 +45,7 @@
       ],
       "dir": "hono-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git add --all"
     },
@@ -73,13 +60,11 @@
       ],
       "dir": "hono-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git commit -m 'Initial commit'"
     }
   ],
-  "warnings": [
-    "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
-  ],
-  "hash": "182a65484c7ecedfac7cd7a16402a7f0f1ecafc141b9c6694ef8074834483005"
+  "warnings": [],
+  "hash": "ee9097c5627bcf99e9632a312d7e27b9bd22b0f5a86b580056070f66ac4259fd"
 }

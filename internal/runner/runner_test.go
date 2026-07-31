@@ -55,6 +55,24 @@ func TestRunnerHelper(t *testing.T) {
 			os.Exit(6)
 		}
 		time.Sleep(30 * time.Second)
+	case "orphan-output":
+		// The grandchild inherits this process's stdout, so it holds the
+		// runner's pipe write end open long after this process has exited.
+		child := exec.Command(
+			os.Args[0],
+			"-test.run=TestRunnerHelper",
+			"--",
+			"hold-output",
+		)
+		child.Env = os.Environ()
+		child.Stdout = os.Stdout
+		child.Stderr = os.Stderr
+		if err := child.Start(); err != nil {
+			os.Exit(5)
+		}
+		_, _ = fmt.Fprintln(os.Stdout, "parent-done")
+	case "hold-output":
+		time.Sleep(8 * time.Second)
 	case "delayed-marker":
 		time.Sleep(2 * time.Second)
 		if err := os.WriteFile(args[1], []byte("orphan survived"), 0o600); err != nil {
@@ -234,6 +252,45 @@ func TestManagerCancellationTerminatesChildProcessTree(t *testing.T) {
 	time.Sleep(3 * time.Second)
 	if _, err := os.Stat(marker); !os.IsNotExist(err) {
 		t.Fatalf("child marker stat error = %v, want child process tree terminated", err)
+	}
+}
+
+func TestManagerStopsWaitingOnOutputHeldByOrphanedGrandchild(t *testing.T) {
+	manager := NewManager()
+	job, err := manager.Start(helperPlan(t, "orphan-output"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	start := time.Now()
+	final := waitForTerminal(t, manager, job.ID, 6*time.Second)
+	elapsed := time.Since(start)
+	if final.State != StateSuccess {
+		t.Fatalf("State = %q, want success (error: %s)", final.State, final.Error)
+	}
+	// The grandchild holds the write end for eight seconds. Without the
+	// orphaned-output bound the job would not reach a terminal state until then.
+	if elapsed > 5*time.Second {
+		t.Fatalf("terminal after %s, want the orphaned-output grace to bound the wait", elapsed)
+	}
+
+	logs, err := manager.Logs(job.ID, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var sawStepOutput, sawNotice bool
+	for _, line := range logs {
+		if strings.Contains(line.Text, "parent-done") {
+			sawStepOutput = true
+		}
+		if strings.Contains(line.Text, "stopped collecting output") {
+			sawNotice = true
+		}
+	}
+	if !sawStepOutput {
+		t.Fatalf("logs missing the step's own output: %#v", logs)
+	}
+	if !sawNotice {
+		t.Fatalf("logs missing the orphaned-output notice: %#v", logs)
 	}
 }
 
@@ -531,8 +588,8 @@ func TestManagerEnforcesProtectedEnvironment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(logs) != 2 || logs[0].Text != "1" || logs[1].Text != trustedPath {
-		t.Fatalf("protected environment logs = %#v, want CI=1 and PATH=%q", logs, trustedPath)
+	if len(logs) != 2 || logs[0].Text != "true" || logs[1].Text != trustedPath {
+		t.Fatalf("protected environment logs = %#v, want CI=true and PATH=%q", logs, trustedPath)
 	}
 }
 

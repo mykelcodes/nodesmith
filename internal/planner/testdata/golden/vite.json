@@ -17,7 +17,7 @@
       ],
       "dir": ".",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/npx --yes create-vite@latest vite-app --template vanilla-ts --no-interactive --no-immediate"
     },
@@ -31,7 +31,7 @@
       ],
       "dir": "vite-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/pnpm install --config.strict-dep-builds=false"
     },
@@ -44,7 +44,7 @@
       ],
       "dir": "vite-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git init"
     },
@@ -58,7 +58,7 @@
       ],
       "dir": "vite-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git add --all"
     },
@@ -73,7 +73,7 @@
       ],
       "dir": "vite-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git commit -m 'Initial commit'"
     }
@@ -81,5 +81,5 @@
   "warnings": [
     "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
   ],
-  "hash": "69c9dced40b7710539b6c2f81d47e24979f485c0b47174b8be040841eef81ae3"
+  "hash": "89b4634e6c1f849522927a117712cead2ef10338a706b97f070e5a7b914ba73d"
 }

@@ -19,7 +19,7 @@
       ],
       "dir": ".",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/wails init -n wails-app -d wails-app -t svelte-ts -nocolour -g"
     },
@@ -30,13 +30,15 @@
       "args": [
         "--prefix",
         "frontend",
-        "install"
+        "install",
+        "--save-dev",
+        "@sveltejs/vite-plugin-svelte@latest"
       ],
       "dir": "wails-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
-      "display": "/tools/npm --prefix frontend install"
+      "display": "/tools/npm --prefix frontend install --save-dev @sveltejs/vite-plugin-svelte@latest"
     },
     {
       "id": "git-add",
@@ -48,7 +50,7 @@
       ],
       "dir": "wails-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git add --all"
     },
@@ -63,11 +65,11 @@
       ],
       "dir": "wails-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git commit -m 'Initial commit'"
     }
   ],
   "warnings": [],
-  "hash": "66fdca57af9245e87ec3cdd974632825bda61c4d7fa5d1dc4b28bd3bd639d117"
+  "hash": "ee6e8241ffc464837f51c00f62f7aae2faa32e897c84fdfa4dee6235308b3a46"
 }

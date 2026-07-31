@@ -12,7 +12,14 @@ import (
 	"time"
 )
 
-const loginShellTimeout = 2 * time.Second
+const (
+	loginShellTimeout = 2 * time.Second
+	// loginShellWaitDelay bounds how long a killed login shell may leave its
+	// output pipe held open by a background process it started. Interactive
+	// startup files routinely spawn daemons that inherit stdout, and without
+	// this bound Output blocks well past the context deadline.
+	loginShellWaitDelay = 1 * time.Second
+)
 
 type loginPathFunc func(context.Context, string) (string, error)
 
@@ -140,6 +147,7 @@ func discoverLoginShellPATH(ctx context.Context, shell string) (string, error) {
 	// constant, and the shell plus each option are supplied as distinct argv
 	// elements. No user or recipe value is interpolated into command text.
 	cmd := exec.CommandContext(ctx, shell, "-l", "-i", "-c", "env")
+	cmd.WaitDelay = loginShellWaitDelay
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("query login-shell environment: %w", err)

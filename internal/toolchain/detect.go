@@ -14,7 +14,14 @@ import (
 
 const (
 	defaultDetectionTTL = 60 * time.Second
-	versionProbeTimeout = 2 * time.Second
+	// versionProbeTimeout has to tolerate genuinely slow first runs: corepack
+	// downloads the package manager on first invocation, and Windows Defender
+	// adds seconds to a cold process launch. A tight budget here silently
+	// disables recipes, so it is deliberately generous.
+	versionProbeTimeout = 8 * time.Second
+	// probeWaitDelay bounds how long a killed probe may leave its output pipe
+	// held open by a process it spawned.
+	probeWaitDelay = 1 * time.Second
 )
 
 // Tool describes one detected executable.
@@ -52,6 +59,12 @@ type versionProbeFunc func(context.Context, string, string, string, []string) (s
 
 type commandResolver interface {
 	ResolveCommand(name string) (string, []string, error)
+}
+
+// toolResolver resolves a logical name once and reports both the discovered
+// path and the native command used to invoke it.
+type toolResolver interface {
+	ResolveToolContext(ctx context.Context, name string) (string, string, []string, error)
 }
 
 // Detector scans and version-probes the supported toolchain. Successful scans
@@ -147,25 +160,23 @@ func (detector *Detector) detectOne(
 	pathValue string,
 ) Tool {
 	tool := Tool{Name: name}
-	path, err := detector.resolver.Resolve(name)
-	if err != nil {
-		if !errors.Is(err, ErrBinaryNotFound) {
+	path, commandPath, prefixArgs, err := detector.resolveTool(ctx, name)
+	if path == "" {
+		if err != nil && !errors.Is(err, ErrBinaryNotFound) {
 			tool.Error = err.Error()
 		}
 		return tool
 	}
 	tool.Path = path
+	if err != nil {
+		// Found on PATH but not invocable — a Windows package-manager shim with
+		// no JavaScript entrypoint, for example. Present means usable, so this
+		// stays false and the reason is reported instead.
+		tool.Error = err.Error()
+		return tool
+	}
 	tool.Present = true
 
-	commandPath := path
-	var prefixArgs []string
-	if resolver, ok := detector.resolver.(commandResolver); ok {
-		commandPath, prefixArgs, err = resolver.ResolveCommand(name)
-		if err != nil {
-			tool.Error = err.Error()
-			return tool
-		}
-	}
 	probeCtx, cancel := context.WithTimeout(ctx, detector.commandTimeout)
 	output, err := detector.probe(probeCtx, commandPath, name, pathValue, prefixArgs)
 	cancel()
@@ -180,6 +191,32 @@ func (detector *Detector) detectOne(
 	}
 	tool.Version = version
 	return tool
+}
+
+// resolveTool performs one PATH walk per tool where the resolver supports it,
+// returning the discovered path, the native command, and any fixed argv prefix.
+// A non-empty path with a non-nil error means the tool exists but cannot be
+// invoked.
+func (detector *Detector) resolveTool(
+	ctx context.Context,
+	name string,
+) (string, string, []string, error) {
+	if resolver, ok := detector.resolver.(toolResolver); ok {
+		return resolver.ResolveToolContext(ctx, name)
+	}
+
+	path, err := detector.resolver.Resolve(name)
+	if err != nil {
+		return "", "", nil, err
+	}
+	if resolver, ok := detector.resolver.(commandResolver); ok {
+		command, prefixArgs, commandErr := resolver.ResolveCommand(name)
+		if commandErr != nil {
+			return path, "", nil, commandErr
+		}
+		return path, command, prefixArgs, nil
+	}
+	return path, path, nil, nil
 }
 
 func cloneToolchain(source Toolchain) Toolchain {
@@ -201,6 +238,7 @@ func probeVersion(
 	args := versionArguments(name)
 	args = append(append([]string(nil), prefixArgs...), args...)
 	cmd := exec.CommandContext(ctx, path, args...)
+	cmd.WaitDelay = probeWaitDelay
 	cmd.Env = replacePATH(os.Environ(), pathValue, runtime.GOOS)
 
 	var output bytes.Buffer

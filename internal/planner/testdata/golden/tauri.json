@@ -22,7 +22,7 @@
       ],
       "dir": ".",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/npx --yes create-tauri-app@latest tauri-app --manager pnpm --template svelte-ts --identifier com.example.app --tauri-version 2 --yes"
     },
@@ -36,7 +36,7 @@
       ],
       "dir": "tauri-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/pnpm install --config.strict-dep-builds=false"
     },
@@ -49,7 +49,7 @@
       ],
       "dir": "tauri-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git init"
     },
@@ -63,7 +63,7 @@
       ],
       "dir": "tauri-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git add --all"
     },
@@ -78,7 +78,7 @@
       ],
       "dir": "tauri-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git commit -m 'Initial commit'"
     }
@@ -86,5 +86,5 @@
   "warnings": [
     "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
   ],
-  "hash": "9cdbc7d2c640acff40ae75e2170ff6cf5882390d7315e253a14c744c6e990855"
+  "hash": "d54557df946065391466863bbb12d4a2c2eb9f9c33548a0d4a7a4e7d5fc93683"
 }

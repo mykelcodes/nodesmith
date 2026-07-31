@@ -76,6 +76,38 @@ func (r *Resolver) ResolveCommandContext(
 	if err != nil {
 		return "", nil, err
 	}
+	return r.nativeCommand(ctx, name, path)
+}
+
+// ResolveToolContext resolves name with a single PATH walk and reports both the
+// path the tool was discovered at and the native command used to invoke it.
+// Callers that need both — the toolchain scan needs the discovered path for
+// display and the native command for the version probe — would otherwise walk
+// the PATH twice per tool.
+//
+// When resolution succeeds but no native command can be derived, the discovered
+// path is still returned alongside the error so callers can report the tool as
+// present but unusable.
+func (r *Resolver) ResolveToolContext(
+	ctx context.Context,
+	name string,
+) (string, string, []string, error) {
+	path, err := r.ResolveContext(ctx, name)
+	if err != nil {
+		return "", "", nil, err
+	}
+	command, prefixArgs, err := r.nativeCommand(ctx, name, path)
+	if err != nil {
+		return path, "", nil, err
+	}
+	return path, command, prefixArgs, nil
+}
+
+func (r *Resolver) nativeCommand(
+	ctx context.Context,
+	name string,
+	path string,
+) (string, []string, error) {
 	if r.goos != "windows" {
 		return path, nil, nil
 	}

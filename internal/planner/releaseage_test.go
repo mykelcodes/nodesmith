@@ -131,7 +131,7 @@ func TestResolveInjectsPnpmCooldownAndNpmDayFallback(t *testing.T) {
 	// because npm warns about config keys it does not know.
 	scaffold := stepByID(t, plan, "scaffold")
 	want := map[string]string{
-		"CI":                              "1",
+		"CI":                              "true",
 		"npm_config_min_release_age":      "3",
 		"pnpm_config_minimum_release_age": "4320",
 	}
@@ -141,7 +141,7 @@ func TestResolveInjectsPnpmCooldownAndNpmDayFallback(t *testing.T) {
 
 	install := stepByID(t, plan, "install")
 	wantInstall := map[string]string{
-		"CI":                              "1",
+		"CI":                              "true",
 		"pnpm_config_minimum_release_age": "4320",
 		"npm_config_minimum_release_age":  "4320",
 	}
@@ -167,7 +167,7 @@ func TestResolveLeavesNonPackageManagerStepsAlone(t *testing.T) {
 	git := stepByID(t, plan, "git-init")
 	// git never reaches the registry itself, but yarn is still the selected
 	// manager, so only the yarn gate rides along.
-	want := map[string]string{"CI": "1", "YARN_NPM_MINIMAL_AGE_GATE": "1440"}
+	want := map[string]string{"CI": "true", "YARN_NPM_MINIMAL_AGE_GATE": "1440"}
 	if !reflect.DeepEqual(git.Env, want) {
 		t.Fatalf("git env = %#v, want %#v", git.Env, want)
 	}
@@ -199,7 +199,7 @@ func TestResolveWritesBunfigBeforeInstall(t *testing.T) {
 
 	plan := releaseAgePlan(t, "bun", minutes(1440))
 	install := stepByID(t, plan, "install")
-	if len(install.Env) != 1 || install.Env["CI"] != "1" {
+	if len(install.Env) != 1 || install.Env["CI"] != "true" {
 		t.Fatalf("bun install env = %#v, want only CI", install.Env)
 	}
 	// The npx step still gets npm's gate even though bun cannot take one.

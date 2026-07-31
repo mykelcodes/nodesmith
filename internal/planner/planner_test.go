@@ -319,8 +319,8 @@ func TestResolveExpandsConditionsAndForEach(t *testing.T) {
 	if strings.Join(resolver.calls, ",") != "npx" {
 		t.Fatalf("resolver calls = %v, want only npx for included step", resolver.calls)
 	}
-	if plan.Steps[0].Env["A"] != "first" || plan.Steps[0].Env["Z"] != "last" || plan.Steps[0].Env["CI"] != "1" {
-		t.Fatalf("Env = %#v, want merged recipe env plus CI=1", plan.Steps[0].Env)
+	if plan.Steps[0].Env["A"] != "first" || plan.Steps[0].Env["Z"] != "last" || plan.Steps[0].Env["CI"] != "true" {
+		t.Fatalf("Env = %#v, want merged recipe env plus CI=true", plan.Steps[0].Env)
 	}
 }
 

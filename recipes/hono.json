@@ -12,7 +12,7 @@
     "hono"
   ],
   "icon": "hono",
-  "verifiedAt": "2026-07-28",
+  "verifiedAt": "2026-07-31",
   "installPolicy": "required",
   "requires": {
     "node": ">=18.0.0",
@@ -74,19 +74,8 @@
         "--template",
         "${template}",
         "--pm",
-        "${packageManager}"
-      ]
-    },
-    {
-      "id": "install",
-      "label": "Install dependencies",
-      "bin": "${packageManager}",
-      "cwd": "projectDir",
-      "env": {
-        "CI": "1"
-      },
-      "args": [
-        "install"
+        "${packageManager}",
+        "--install"
       ]
     },
     {

@@ -372,7 +372,7 @@ func buildSmokePlan(
 		}
 		environment := map[string]string{
 			"ASTRO_TELEMETRY_DISABLED": "1",
-			"CI":                       "1",
+			"CI":                       "true",
 			"DO_NOT_TRACK":             "1",
 			"EXPO_NO_TELEMETRY":        "1",
 			"NEXT_TELEMETRY_DISABLED":  "1",
@@ -381,7 +381,7 @@ func buildSmokePlan(
 		for key, value := range spec.Env {
 			environment[key] = value
 		}
-		environment["CI"] = "1"
+		environment["CI"] = "true"
 		steps = append(steps, planner.PlanStep{
 			ID:      spec.ID,
 			Label:   spec.Label,

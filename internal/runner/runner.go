@@ -23,6 +23,14 @@ const (
 	defaultRingCapacity       = 10_000
 	defaultEventQueueCapacity = 10_000
 	defaultRetention          = 30 * time.Minute
+	// orphanedOutputGrace bounds how long a step keeps reading output after its
+	// own process has exited. A surviving grandchild can hold the inherited
+	// write ends open indefinitely; without this bound the step would never
+	// reach a terminal state and the process tree would be orphaned at shutdown.
+	orphanedOutputGrace = 2 * time.Second
+	// processWaitDelay bounds how long a killed process may ignore termination
+	// before the runtime force-closes its descriptors.
+	processWaitDelay = 2 * time.Second
 )
 
 // State is the lifecycle state of a scaffold job.
@@ -135,9 +143,15 @@ func (r *logRing) after(seq int) []LogLine {
 }
 
 type jobRecord struct {
-	job     Job
-	plan    planner.Plan
-	cancel  context.CancelFunc
+	job    Job
+	plan   planner.Plan
+	cancel context.CancelFunc
+
+	// logMu guards logs and nextSeq independently of Manager.mu so that a
+	// chatty generator does not serialise Status and Logs callers behind every
+	// captured line. It is also what keeps sequence assignment, ring insertion,
+	// and event publication atomic, so published log events stay ordered.
+	logMu   sync.Mutex
 	logs    logRing
 	nextSeq int
 }
@@ -346,12 +360,13 @@ func (m *Manager) Logs(jobID string, fromSeq int) ([]LogLine, error) {
 	}
 	m.mu.RLock()
 	record, ok := m.jobs[jobID]
+	m.mu.RUnlock()
 	if !ok {
-		m.mu.RUnlock()
 		return nil, fmt.Errorf("job %q was not found", jobID)
 	}
+	record.logMu.Lock()
 	lines := record.logs.after(fromSeq)
-	m.mu.RUnlock()
+	record.logMu.Unlock()
 	return lines, nil
 }
 
@@ -437,7 +452,13 @@ func (m *Manager) runStep(ctx context.Context, jobID string, step planner.PlanSt
 		return 0, nil
 	}
 
-	command := exec.Command(step.Bin, step.Args...)
+	// CommandContext plus an explicit Cancel gives the runtime a deadline it can
+	// enforce: WaitDelay force-terminates a process that ignores cancellation.
+	// The default Cancel would signal only the direct child, so the whole tree
+	// is terminated here instead.
+	command := exec.CommandContext(ctx, step.Bin, step.Args...)
+	command.Cancel = func() error { return terminateProcess(command) }
+	command.WaitDelay = processWaitDelay
 	command.Dir = step.Dir
 	overrides := make(map[string]string, len(step.Env)+1)
 	for key, value := range step.Env {
@@ -446,7 +467,7 @@ func (m *Manager) runStep(ctx context.Context, jobID string, step planner.PlanSt
 		}
 		overrides[key] = value
 	}
-	overrides["CI"] = "1"
+	overrides["CI"] = "true"
 	if m.pathProvider != nil {
 		pathValue, err := m.pathProvider()
 		if err != nil {
@@ -457,47 +478,80 @@ func (m *Manager) runStep(ctx context.Context, jobID string, step planner.PlanSt
 	command.Env = mergeEnvironment(os.Environ(), overrides)
 	configureProcess(command)
 
-	stdout, err := command.StdoutPipe()
+	// Deliberately os.Pipe rather than Cmd.StdoutPipe: Cmd.Wait closes pipes it
+	// owns only once every reader has finished, so a grandchild that inherited
+	// the write end can block Wait indefinitely. Owning these descriptors lets
+	// the step stop reading on a deadline instead of hanging forever.
+	stdoutReader, stdoutWriter, err := os.Pipe()
 	if err != nil {
 		return -1, fmt.Errorf("capture stdout: %w", err)
 	}
-	stderr, err := command.StderrPipe()
+	defer func() { _ = stdoutReader.Close() }()
+	stderrReader, stderrWriter, err := os.Pipe()
 	if err != nil {
+		_ = stdoutWriter.Close()
 		return -1, fmt.Errorf("capture stderr: %w", err)
 	}
-	if err := command.Start(); err != nil {
-		return -1, fmt.Errorf("start %s: %w", step.Bin, err)
+	defer func() { _ = stderrReader.Close() }()
+	command.Stdout = stdoutWriter
+	command.Stderr = stderrWriter
+
+	startErr := command.Start()
+	// The child owns its own descriptors once started. The parent's copies must
+	// be closed or the read ends never observe EOF.
+	_ = stdoutWriter.Close()
+	_ = stderrWriter.Close()
+	if startErr != nil {
+		return -1, fmt.Errorf("start %s: %w", step.Bin, startErr)
 	}
 
-	processDone := make(chan struct{})
+	pumpsDone := make(chan struct{})
 	go func() {
-		select {
-		case <-ctx.Done():
-			_ = terminateProcess(command)
-		case <-processDone:
-		}
+		defer close(pumpsDone)
+		var pumps sync.WaitGroup
+		pumps.Add(2)
+		go func() {
+			defer pumps.Done()
+			m.pump(jobID, step.ID, "stdout", stdoutReader)
+		}()
+		go func() {
+			defer pumps.Done()
+			m.pump(jobID, step.ID, "stderr", stderrReader)
+		}()
+		pumps.Wait()
 	}()
 
-	var pumps sync.WaitGroup
-	pumps.Add(2)
-	go func() {
-		defer pumps.Done()
-		m.pump(jobID, step.ID, "stdout", stdout)
-	}()
-	go func() {
-		defer pumps.Done()
-		m.pump(jobID, step.ID, "stderr", stderr)
-	}()
-
-	pumps.Wait()
 	waitErr := command.Wait()
-	close(processDone)
+
+	// The process has exited, but anything it spawned may still hold the write
+	// ends open. Collect trailing output briefly, then stop reading so the job
+	// always reaches a terminal state.
+	grace := time.NewTimer(orphanedOutputGrace)
+	select {
+	case <-pumpsDone:
+		grace.Stop()
+	case <-grace.C:
+		m.appendLog(
+			jobID,
+			step.ID,
+			"stderr",
+			"Nodesmith stopped collecting output: a background process is still holding this step's output stream.",
+		)
+		_ = stdoutReader.Close()
+		_ = stderrReader.Close()
+		<-pumpsDone
+	}
+
 	if waitErr == nil {
 		return 0, nil
 	}
 	var exitError *exec.ExitError
 	if errors.As(waitErr, &exitError) {
 		return exitError.ExitCode(), fmt.Errorf("process exited with code %d", exitError.ExitCode())
+	}
+	if errors.Is(waitErr, exec.ErrWaitDelay) {
+		// The process exited on its own; only its descendants overran the delay.
+		return 0, nil
 	}
 	return -1, fmt.Errorf("wait for process: %w", waitErr)
 }
@@ -508,18 +562,22 @@ func (m *Manager) pump(jobID, stepID, stream string, reader io.Reader) {
 	for scanner.Scan() {
 		m.appendLog(jobID, stepID, stream, scanner.Text())
 	}
-	if err := scanner.Err(); err != nil {
+	// A reader closed on the orphaned-output deadline is an expected stop, not a
+	// failure worth reporting to the user.
+	if err := scanner.Err(); err != nil && !errors.Is(err, os.ErrClosed) {
 		m.appendLog(jobID, stepID, "stderr", fmt.Sprintf("Nodesmith could not read %s: %v", stream, err))
 	}
 }
 
 func (m *Manager) appendLog(jobID, stepID, stream, text string) {
-	m.mu.Lock()
+	m.mu.RLock()
 	record := m.jobs[jobID]
+	m.mu.RUnlock()
 	if record == nil {
-		m.mu.Unlock()
 		return
 	}
+
+	record.logMu.Lock()
 	line := LogLine{
 		Seq:    record.nextSeq,
 		Stream: stream,
@@ -538,7 +596,7 @@ func (m *Manager) appendLog(jobID, stepID, stream, text string) {
 			Text:   text,
 		},
 	})
-	m.mu.Unlock()
+	record.logMu.Unlock()
 }
 
 func (m *Manager) finish(jobID string, state State, exitCode int, message string, started time.Time) {

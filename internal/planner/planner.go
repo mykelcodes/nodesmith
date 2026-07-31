@@ -102,7 +102,7 @@ func Resolve(manifest recipe.Manifest, request ScaffoldRequest, resolver BinaryR
 			return Plan{}, fmt.Errorf("resolve step %q cwd: %w", step.ID, err)
 		}
 
-		environment := map[string]string{"CI": "1"}
+		environment := map[string]string{"CI": "true"}
 		keys := make([]string, 0, len(step.Env))
 		for key := range step.Env {
 			keys = append(keys, key)

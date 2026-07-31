@@ -15,7 +15,7 @@
       ],
       "dir": ".",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/npx --yes express-generator@latest express-app --view ejs"
     },
@@ -29,7 +29,7 @@
       ],
       "dir": "express-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/pnpm install --config.strict-dep-builds=false"
     },
@@ -42,7 +42,7 @@
       ],
       "dir": "express-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git init"
     },
@@ -56,7 +56,7 @@
       ],
       "dir": "express-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git add --all"
     },
@@ -71,7 +71,7 @@
       ],
       "dir": "express-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git commit -m 'Initial commit'"
     }
@@ -79,5 +79,5 @@
   "warnings": [
     "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
   ],
-  "hash": "9f4491cb0c2c18407641bc35c708a6769e96c0fa99bf292177eef743f39d7003"
+  "hash": "5dd7b5d21c54bf23dd6bca45e4b1ce6b3582199d83811c54475bb7eb0370313c"
 }

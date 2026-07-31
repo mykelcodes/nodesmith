@@ -16,7 +16,7 @@
       ],
       "dir": ".",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/npx --yes create-vite@latest solid-app --template solid-ts --no-interactive"
     },
@@ -30,7 +30,7 @@
       ],
       "dir": "solid-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/pnpm install --config.strict-dep-builds=false"
     },
@@ -43,7 +43,7 @@
       ],
       "dir": "solid-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git init"
     },
@@ -57,7 +57,7 @@
       ],
       "dir": "solid-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git add --all"
     },
@@ -72,7 +72,7 @@
       ],
       "dir": "solid-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git commit -m 'Initial commit'"
     }
@@ -80,5 +80,5 @@
   "warnings": [
     "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
   ],
-  "hash": "e35d03d0cb6d71f4e50d8bb344058f8bf9063654ab86070595755d061f761e8e"
+  "hash": "401a43d611357e1a9c59eda3d3d4bb8d1ffe934a974b7736374f72a2f3f8e78f"
 }

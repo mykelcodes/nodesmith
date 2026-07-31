@@ -204,7 +204,9 @@ Each step requires:
 
 Environment names must be valid cross-platform names and unique without regard
 to case. `PATH` is reserved because Nodesmith supplies the exact detected path
-to every process, and `CI` is always enforced as `1`.
+to every process. Schema-v1 manifests declare `"CI": "1"`, which Nodesmith
+normalises to `CI=true` for child processes so Boolean-parsing CLIs remain
+non-interactive.
 
 Use `when` to gate a whole step. Scaffold steps normally run in `parentDir`; install and Git steps
 normally run in `projectDir`. Bundled recipes initialise Git, stage the generated files, and create

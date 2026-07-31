@@ -18,7 +18,7 @@
       ],
       "dir": ".",
       "env": {
-        "CI": "1",
+        "CI": "true",
         "NODE_INSTALLER": "pnpm",
         "pnpm_config_block_exotic_subdeps": "false",
         "pnpm_config_dangerously_allow_all_builds": "true",
@@ -40,7 +40,7 @@
       ],
       "dir": "electron-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/pnpm config set allowBuilds '{\"electron\":true,\"electron-winstaller\":true,\"esbuild\":true}' --json --location=project"
     },
@@ -57,7 +57,7 @@
       ],
       "dir": "electron-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/pnpm config set nodeLinker hoisted --location=project"
     },
@@ -70,7 +70,7 @@
       ],
       "dir": "electron-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git init"
     },
@@ -84,7 +84,7 @@
       ],
       "dir": "electron-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git add --all"
     },
@@ -99,11 +99,11 @@
       ],
       "dir": "electron-app",
       "env": {
-        "CI": "1"
+        "CI": "true"
       },
       "display": "/tools/git commit -m 'Initial commit'"
     }
   ],
   "warnings": [],
-  "hash": "764a76cf6a97d919424b7f9946a7aae14add866a1ac7dc6046842c6f70b93b91"
+  "hash": "cdff6132fed1f86ce966454b7ea6490dc8d51f116a97a20a085749f745827496"
 }

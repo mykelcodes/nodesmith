@@ -11,7 +11,7 @@
     "wails"
   ],
   "icon": "wails",
-  "verifiedAt": "2026-07-28",
+  "verifiedAt": "2026-07-31",
   "installPolicy": "required",
   "requires": {
     "node": ">=18.0.0",
@@ -126,7 +126,23 @@
       "args": [
         "--prefix",
         "frontend",
-        "install"
+        "install",
+        {
+          "if": "template == \"svelte-ts\"",
+          "then": [
+            "--save-dev",
+            "@sveltejs/vite-plugin-svelte@latest"
+          ],
+          "else": [
+            {
+              "if": "template == \"svelte\"",
+              "then": [
+                "--save-dev",
+                "@sveltejs/vite-plugin-svelte@latest"
+              ]
+            }
+          ]
+        }
       ],
       "when": "installDeps"
     },
