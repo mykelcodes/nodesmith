@@ -110,6 +110,76 @@ func TestSemanticVersionCompare(t *testing.T) {
 	}
 }
 
+func TestSemanticVersionCompareIsATotalOrder(t *testing.T) {
+	t.Parallel()
+
+	// Semantic-version precedence, ascending.
+	ascending := []string{
+		"1.0.0-alpha",
+		"1.0.0-alpha.1",
+		"1.0.0-alpha.beta",
+		"1.0.0-beta",
+		"1.0.0-beta.2",
+		"1.0.0-beta.11",
+		"1.0.0-rc.1",
+		"1.0.0",
+		"1.0.1",
+		"1.1.0",
+		"2.0.0",
+	}
+	parsed := make([]SemanticVersion, len(ascending))
+	for index, value := range ascending {
+		version, err := ParseSemanticVersion(value)
+		if err != nil {
+			t.Fatalf("ParseSemanticVersion(%q) error = %v", value, err)
+		}
+		parsed[index] = version
+	}
+
+	for leftIndex, left := range parsed {
+		for rightIndex, right := range parsed {
+			forward := left.Compare(right)
+			if forward != -right.Compare(left) {
+				t.Fatalf(
+					"Compare(%q, %q) = %d and Compare(%q, %q) = %d are not antisymmetric",
+					ascending[leftIndex], ascending[rightIndex], forward,
+					ascending[rightIndex], ascending[leftIndex], right.Compare(left),
+				)
+			}
+			want := 0
+			switch {
+			case leftIndex < rightIndex:
+				want = -1
+			case leftIndex > rightIndex:
+				want = 1
+			}
+			if forward != want {
+				t.Fatalf(
+					"Compare(%q, %q) = %d, want %d",
+					ascending[leftIndex], ascending[rightIndex], forward, want,
+				)
+			}
+		}
+	}
+}
+
+func TestParseSemanticVersionRejectsLeadingZeroPrerelease(t *testing.T) {
+	t.Parallel()
+
+	// "01" and "1" compare equal numerically but differ as strings, which is
+	// why semantic versioning forbids the form outright.
+	for _, value := range []string{"1.0.0-01", "1.0.0-beta.01", "1.0.0-00"} {
+		if _, err := ParseSemanticVersion(value); err == nil {
+			t.Errorf("ParseSemanticVersion(%q) error = nil, want a rejection", value)
+		}
+	}
+	for _, value := range []string{"1.0.0-0", "1.0.0-0a", "1.0.0-alpha.0", "1.0.0+00.1"} {
+		if _, err := ParseSemanticVersion(value); err != nil {
+			t.Errorf("ParseSemanticVersion(%q) error = %v, want acceptance", value, err)
+		}
+	}
+}
+
 func TestSatisfiesRange(t *testing.T) {
 	t.Parallel()
 

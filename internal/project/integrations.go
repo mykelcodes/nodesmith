@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 
+	"nodesmith/internal/environ"
 	"nodesmith/internal/toolchain"
 )
 
@@ -285,9 +286,13 @@ func nativeWindowsIntegration(
 	return "", false
 }
 
+// startDetached launches an editor and deliberately abandons it. No WaitDelay is
+// set here, unlike every other exec site in the tree: WaitDelay only takes effect
+// inside Cmd.Wait, and this process is released rather than waited on. The editor
+// is meant to outlive Nodesmith.
 func startDetached(executable string, args []string, pathValue string) error {
 	cmd := exec.Command(executable, args...)
-	cmd.Env = environmentWithPATH(os.Environ(), pathValue)
+	cmd.Env = environ.WithPATH(os.Environ(), pathValue, runtime.GOOS)
 	if err := cmd.Start(); err != nil {
 		return err
 	}
@@ -295,28 +300,4 @@ func startDetached(executable string, args []string, pathValue string) error {
 		return fmt.Errorf("release detached process: %w", err)
 	}
 	return nil
-}
-
-func environmentWithPATH(environment []string, pathValue string) []string {
-	result := make([]string, 0, len(environment)+1)
-	replaced := false
-	for _, entry := range environment {
-		key, _, _ := strings.Cut(entry, "=")
-		isPath := key == "PATH"
-		if runtime.GOOS == "windows" {
-			isPath = strings.EqualFold(key, "PATH")
-		}
-		if isPath {
-			if !replaced {
-				result = append(result, "PATH="+pathValue)
-				replaced = true
-			}
-			continue
-		}
-		result = append(result, entry)
-	}
-	if !replaced {
-		result = append(result, "PATH="+pathValue)
-	}
-	return result
 }

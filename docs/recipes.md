@@ -123,6 +123,47 @@ Every field needs a kebab-case `id`, a `label`, a `type`, and a type-correct `de
 Options use `{ "value": "...", "label": "..." }`. A field may also include `help` and
 `visibleIf`. Field ids may not shadow the built-in variables below.
 
+### Value constraints
+
+Every constraint below is optional and additive, so manifests written before they existed
+stay valid and `schemaVersion` is unchanged.
+
+| Property | Applies to | Meaning |
+|---|---|---|
+| `required` | any type | The user must answer; no silent fall back to `default` |
+| `pattern` | `text` | RE2 expression the answer must match. Unanchored — use `^` and `$` |
+| `minLength` / `maxLength` | `text` | Bounds in characters, not bytes |
+| `min` / `max` | `number` | Inclusive bounds |
+
+```json
+{
+  "id": "scope",
+  "label": "Package scope",
+  "type": "text",
+  "default": "",
+  "required": true,
+  "pattern": "^[a-z][a-z0-9-]*$",
+  "minLength": 2,
+  "maxLength": 32
+}
+```
+
+Notes:
+
+- Constraints are validated when the manifest loads. An uncompilable `pattern`, a
+  `minLength` above its `maxLength`, or a constraint on the wrong field type is a manifest
+  error, not a runtime surprise.
+- A `default` must satisfy its own field's constraints. Otherwise the violating value would
+  be substituted into argv whenever the field is left unanswered.
+- `required` is enforced only when the field is visible, so a field hidden by `visibleIf`
+  never blocks a plan.
+- The form applies the same rules before submitting, but `planner.Resolve` re-checks
+  everything and remains authoritative.
+- These constraints are not a security boundary. Execution is argv-only with no shell and
+  every binary is allowlisted and resolved to an absolute path. They exist so that a value
+  the *generator* would misread — one starting with `-`, an empty string, or a value long
+  enough to trip an OS argv limit — is rejected with a clear message.
+
 ## Built-in variables
 
 Nodesmith always provides:

@@ -89,9 +89,6 @@ func (service *ScaffoldService) Start(request ScaffoldRequest) (Job, error) {
 	}
 	service.mu.Lock()
 	reviewed, exists := service.reviewed[key]
-	if exists {
-		delete(service.reviewed, key)
-	}
 	service.mu.Unlock()
 	if !exists {
 		return Job{}, errors.New("review the resolved commands before starting this project")
@@ -102,8 +99,16 @@ func (service *ScaffoldService) Start(request ScaffoldRequest) (Job, error) {
 
 	job, err := service.jobs.Start(resolved)
 	if err != nil {
+		// The reviewed plan is deliberately left in place. Nothing about it
+		// changed, so a failure to start — another job already running, for
+		// instance — must not force the user to review it again.
 		return Job{}, fmt.Errorf("start project creation: %w", err)
 	}
+	// Consumed only once execution has actually begun. That keeps a reviewed
+	// plan single-use without losing it to a failure unrelated to the review.
+	service.mu.Lock()
+	delete(service.reviewed, key)
+	service.mu.Unlock()
 	manifest, manifestErr := service.recipes.getManifest(normalized.RecipeID)
 	recipeName := normalized.RecipeID
 	if manifestErr == nil {
@@ -124,8 +129,13 @@ func (service *ScaffoldService) Start(request ScaffoldRequest) (Job, error) {
 		entry.CreatedAt = service.store.now().UTC()
 	}
 	if err := service.store.recordHistory(entry); err != nil {
-		_ = service.jobs.Cancel(job.ID)
-		return Job{}, fmt.Errorf("record project history before running: %w", err)
+		// The job is already running and may have created the project
+		// directory. Cancelling here would abandon a half-written project and
+		// leave no record that it exists, so the run continues and the failure
+		// is reported instead. Losing a history row is the lesser loss.
+		if ctx, ready := service.bridge.ready(); ready {
+			runtime.LogErrorf(ctx, "record Nodesmith history for job %s: %v", job.ID, err)
+		}
 	}
 	if current, statusErr := service.jobs.Status(job.ID); statusErr == nil && isTerminalJob(current) {
 		_ = service.store.updateHistory(

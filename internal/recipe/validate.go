@@ -7,6 +7,8 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"nodesmith/internal/allowlist"
 )
 
 const maxArgObjectDepth = 3
@@ -20,23 +22,6 @@ var builtInVariables = map[string]struct{}{
 	"packageManager": {},
 	"installDeps":    {},
 	"gitInit":        {},
-}
-
-var allowedBinaries = map[string]struct{}{
-	"node":  {},
-	"npm":   {},
-	"npx":   {},
-	"pnpm":  {},
-	"pnpx":  {},
-	"yarn":  {},
-	"bun":   {},
-	"bunx":  {},
-	"git":   {},
-	"go":    {},
-	"cargo": {},
-	"wails": {},
-	"gh":    {},
-	"code":  {},
 }
 
 var allowedPackageManagers = map[string]struct{}{
@@ -250,7 +235,7 @@ func validateRequirements(requirements Requirements) error {
 	}
 	seenTools := make(map[string]int, len(requirements.Tools))
 	for index, tool := range requirements.Tools {
-		if _, ok := allowedBinaries[tool]; !ok {
+		if !allowlist.IsAllowed(tool) {
 			return fmt.Errorf("requires.tools[%d]: binary %q is not in the allowlist", index, tool)
 		}
 		if previous, exists := seenTools[tool]; exists {
@@ -285,6 +270,9 @@ func validateFieldDefinitions(fields []Field) (map[string]FieldType, error) {
 			return nil, fmt.Errorf("%s.type: unsupported value %q", path, field.Type)
 		}
 		if err := validateFieldDefault(path, field); err != nil {
+			return nil, err
+		}
+		if err := validateFieldConstraints(path, field); err != nil {
 			return nil, err
 		}
 		known[field.ID] = field.Type
@@ -372,7 +360,7 @@ func validateBinary(path string, binary string, known map[string]FieldType) erro
 	if binary == "${packageManager}" {
 		return nil
 	}
-	if _, ok := allowedBinaries[binary]; !ok {
+	if !allowlist.IsAllowed(binary) {
 		return fmt.Errorf("%s: binary %q is not in the allowlist", path, binary)
 	}
 	return nil

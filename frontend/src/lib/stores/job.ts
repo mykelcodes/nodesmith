@@ -19,21 +19,75 @@ export interface JobRuntimeSnapshot {
 	error: string;
 }
 
-const initialState: JobRuntimeSnapshot = {
-	jobId: '',
-	lines: [],
-	steps: {},
-	started: null,
-	done: null,
-	error: ''
-};
+// A factory, not a shared constant. Spreading one module-level object into
+// store.set leaves every reset sharing the same lines array and steps record,
+// so the immutability of this store would rest on every future writer
+// remembering never to mutate in place.
+function createInitialState(): JobRuntimeSnapshot {
+	return {
+		jobId: '',
+		lines: [],
+		steps: {},
+		started: null,
+		done: null,
+		error: ''
+	};
+}
 
-const store = writable<JobRuntimeSnapshot>(initialState);
-let seenSequences = new Set<number>();
-let pendingLines = new Map<number, LogLine>();
+// Matches the backend replay ring, so anything dropped here is still
+// recoverable through ScaffoldService.Logs. Without a cap the buffer grows for
+// the lifetime of the job and every flush copies all of it.
+export const MAX_RETAINED_LOG_LINES = 10_000;
+
+const store = writable<JobRuntimeSnapshot>(createInitialState());
+
+// Per-job bookkeeping that must not leak across jobs.
+//
+// These fields used to be file-scoped `let`s reset one by one, by convention,
+// from beginJob and clear. Any new entry point that forgot one would corrupt
+// dedupe state for the next job. Holding them on a single object means a reset
+// is one assignment that cannot partially miss a field.
+//
+// Delivery is ordered in practice but not guaranteed, so acceptance is tracked
+// as a contiguous watermark plus the few sequences seen beyond it. In the
+// ordered case outOfOrder stays empty, which keeps this O(1) rather than
+// remembering every sequence for the lifetime of the job.
+interface SequenceTracking {
+	pendingLines: Map<number, LogLine>;
+	highestSequence: number;
+	contiguousUpTo: number;
+	outOfOrder: Set<number>;
+}
+
+function createTracking(): SequenceTracking {
+	return {
+		pendingLines: new Map(),
+		highestSequence: -1,
+		contiguousUpTo: -1,
+		outOfOrder: new Set()
+	};
+}
+
+let tracking = createTracking();
 let flushHandle: number | ReturnType<typeof setTimeout> | null = null;
 let flushUsesAnimationFrame = false;
-let highestSequence = -1;
+
+function hasSeen(seq: number): boolean {
+	return seq <= tracking.contiguousUpTo || tracking.outOfOrder.has(seq);
+}
+
+function markSeen(seq: number) {
+	if (seq <= tracking.contiguousUpTo) return;
+	tracking.outOfOrder.add(seq);
+	while (tracking.outOfOrder.delete(tracking.contiguousUpTo + 1)) {
+		tracking.contiguousUpTo += 1;
+	}
+}
+
+function capLines(lines: LogLine[]): LogLine[] {
+	if (lines.length <= MAX_RETAINED_LOG_LINES) return lines;
+	return lines.slice(lines.length - MAX_RETAINED_LOG_LINES);
+}
 
 export function mergeLogLines(
 	existing: readonly LogLine[],
@@ -80,7 +134,9 @@ export function derivePlanStepState(
 	if (event && event.state !== 'running') return event.state;
 	if (!job || job.state === 'pending' || job.stepIndex < 0) return event?.state ?? 'pending';
 
-	if (job.state === 'success') return index < job.stepCount ? 'success' : 'pending';
+	// index addresses the step array that stepCount describes, so it is always in
+	// range: a successful job has every step succeeded.
+	if (job.state === 'success') return 'success';
 	if (job.state === 'failed') {
 		if (index < job.stepIndex) return 'success';
 		if (index === job.stepIndex) return 'failed';
@@ -117,22 +173,24 @@ function cancelScheduledFlush() {
 	flushUsesAnimationFrame = false;
 }
 
+function resetSequenceTracking() {
+	tracking = createTracking();
+}
+
 function beginJob(jobId: string) {
 	if (get(store).jobId === jobId) return;
 	cancelScheduledFlush();
-	seenSequences = new Set();
-	pendingLines = new Map();
-	highestSequence = -1;
-	store.set({ ...initialState, jobId });
+	resetSequenceTracking();
+	store.set({ ...createInitialState(), jobId });
 }
 
 function flushPendingLines() {
-	if (pendingLines.size === 0) return;
-	const additions = [...pendingLines.values()].sort((left, right) => left.seq - right.seq);
-	pendingLines = new Map();
+	if (tracking.pendingLines.size === 0) return;
+	const additions = [...tracking.pendingLines.values()].sort((left, right) => left.seq - right.seq);
+	tracking.pendingLines = new Map();
 	store.update((snapshot) => ({
 		...snapshot,
-		lines: mergeLogLines(snapshot.lines, additions)
+		lines: capLines(mergeLogLines(snapshot.lines, additions))
 	}));
 }
 
@@ -154,16 +212,22 @@ function scheduleFlush() {
 }
 
 function acceptLine(line: LogLine) {
-	if (seenSequences.has(line.seq) || pendingLines.has(line.seq)) return;
-	seenSequences.add(line.seq);
-	pendingLines.set(line.seq, line);
-	highestSequence = Math.max(highestSequence, line.seq);
+	if (hasSeen(line.seq) || tracking.pendingLines.has(line.seq)) return;
+	markSeen(line.seq);
+	tracking.pendingLines.set(line.seq, line);
+	tracking.highestSequence = Math.max(tracking.highestSequence, line.seq);
 }
 
 export const jobRuntime = {
 	subscribe: store.subscribe,
 	get snapshot() {
 		return get(store);
+	},
+	// The first sequence not yet accepted. Recovering from this point refetches
+	// only the gap, instead of pulling the whole retained buffer back across
+	// the bridge every time an event is dropped.
+	get nextExpectedSequence() {
+		return tracking.contiguousUpTo + 1;
 	},
 	begin(jobId: string) {
 		beginJob(jobId);
@@ -175,7 +239,7 @@ export const jobRuntime = {
 	},
 	addLog(event: JobLogEvent) {
 		if (get(store).jobId !== event.jobId) return false;
-		const hasGap = event.seq > highestSequence + 1;
+		const hasGap = event.seq > tracking.highestSequence + 1;
 		acceptLine({
 			seq: event.seq,
 			stream: event.stream,
@@ -205,9 +269,7 @@ export const jobRuntime = {
 	},
 	clear() {
 		cancelScheduledFlush();
-		seenSequences = new Set();
-		pendingLines = new Map();
-		highestSequence = -1;
-		store.set(initialState);
+		resetSequenceTracking();
+		store.set(createInitialState());
 	}
 };

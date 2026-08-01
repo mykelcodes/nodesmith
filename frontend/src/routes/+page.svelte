@@ -116,6 +116,23 @@
 
 	onMount(() => {
 		void loadRecipes();
+
+		// The registry is loaded before this interface exists, so the backend
+		// replays its startup report once the DOM is ready. Without this a user
+		// recipe that failed to validate is skipped in silence at launch.
+		let unsubscribe: (() => void) | undefined;
+		try {
+			unsubscribe = api.events.onRecipesReloaded((result) => {
+				if (result.warnings.length === 0 && result.overrides.length === 0) return;
+				notice =
+					result.warnings.length > 0
+						? `${result.count} recipes loaded. ${result.warnings.join(' ')}`
+						: `${result.count} recipes loaded. Overrides applied: ${result.overrides.join(', ')}.`;
+			});
+		} catch {
+			// Outside the desktop runtime there is no event bridge to attach to.
+		}
+		return () => unsubscribe?.();
 	});
 </script>
 
@@ -148,7 +165,7 @@
 			<span class="font-bold text-success">{readyCount}</span> ready locally
 		</span>
 		<Button variant="secondary" size="sm" onclick={reloadRecipes} loading={reloading}>
-			<Icon name="refresh" class="size-3.5" />
+			{#snippet icon()}<Icon name="refresh" class="size-3.5" />{/snippet}
 			Reload
 		</Button>
 	</div>

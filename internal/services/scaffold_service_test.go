@@ -168,10 +168,11 @@ func TestScaffoldServiceEnforcesSelectedPackageManager(t *testing.T) {
 	service, _ := newScaffoldServiceTestHarness(t)
 	service.detect = func(context.Context, bool) (toolchain.Toolchain, error) {
 		detected := testServiceToolchain("24.0.0")
+		// Present is false because the shim resolved but cannot be invoked. A
+		// package manager that is merely missing a probed version stays usable.
 		detected.Tools["npm"] = toolchain.Tool{
-			Name:    "npm",
-			Present: true,
-			Error:   "npm version probe failed",
+			Name:  "npm",
+			Error: "npm shim could not be invoked",
 		}
 		return detected, nil
 	}
@@ -184,7 +185,7 @@ func TestScaffoldServiceEnforcesSelectedPackageManager(t *testing.T) {
 	})
 	if err == nil ||
 		!strings.Contains(err.Error(), `package manager "npm" is unavailable`) ||
-		!strings.Contains(err.Error(), "npm version probe failed") {
+		!strings.Contains(err.Error(), "npm shim could not be invoked") {
 		t.Fatalf("Plan() selected package-manager error = %v", err)
 	}
 }
@@ -240,7 +241,7 @@ func newScaffoldServiceTestHarness(t *testing.T) (*ScaffoldService, *StoreServic
 	if err != nil {
 		t.Fatal(err)
 	}
-	storeService, err := NewStoreService(t.TempDir(), t.TempDir())
+	storeService, err := NewStoreService(nil, t.TempDir(), t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}

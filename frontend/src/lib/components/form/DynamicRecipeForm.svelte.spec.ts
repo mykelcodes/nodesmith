@@ -2,6 +2,7 @@ import { page } from 'vitest/browser';
 import { describe, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import type { Recipe, ScaffoldRequest } from '$lib/api';
+import { noFieldConstraints } from '$lib/api/test-fixtures';
 import DynamicRecipeForm from './DynamicRecipeForm.svelte';
 
 const recipe: Recipe = {
@@ -23,6 +24,7 @@ const recipe: Recipe = {
 	},
 	fields: [
 		{
+			...noFieldConstraints,
 			id: 'typescript',
 			label: 'Use TypeScript',
 			type: 'boolean',
@@ -32,6 +34,7 @@ const recipe: Recipe = {
 			visibleIf: ''
 		},
 		{
+			...noFieldConstraints,
 			id: 'scope',
 			label: 'Organisation scope',
 			type: 'text',

@@ -8,6 +8,12 @@
 
 	interface Props extends Omit<HTMLButtonAttributes, 'children' | 'class' | 'disabled' | 'type'> {
 		children: Snippet;
+		/**
+		 * Leading icon. Pass it here rather than inside `children` so the loading
+		 * spinner can take its place: a button that renders its own icon in
+		 * `children` shows that icon *and* the spinner, which reads as two icons.
+		 */
+		icon?: Snippet;
 		variant?: Variant;
 		size?: Size;
 		type?: 'button' | 'submit' | 'reset';
@@ -35,6 +41,7 @@
 
 	let {
 		children,
+		icon,
 		variant = 'primary',
 		size = 'md',
 		type = 'button',
@@ -56,6 +63,8 @@
 	{#if loading}
 		<Icon name="refresh" class="size-4 animate-spin" />
 		<span class="sr-only">{loadingLabel}</span>
+	{:else if icon}
+		{@render icon()}
 	{/if}
 	{@render children()}
 </button>

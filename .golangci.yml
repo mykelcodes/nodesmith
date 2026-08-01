@@ -12,6 +12,13 @@ linters:
     - staticcheck
     - unused
 
+# golangci-lint v2 moved formatters out of `linters` into their own block.
+# Without this section nothing checked formatting, and unformatted code reached
+# main. `golangci-lint run` fails on a formatting diff; `task go:format` fixes it.
+formatters:
+  enable:
+    - gofmt
+
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0

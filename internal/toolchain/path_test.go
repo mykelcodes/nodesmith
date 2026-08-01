@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -122,8 +123,106 @@ func TestPathResolverFallsBackOnErrorAndTimeout(t *testing.T) {
 			if got != "/fallback/bin" {
 				t.Fatalf("ResolvedPath() = %q, want fallback", got)
 			}
+			// Falling back silently is what makes "every tool is missing" look
+			// like a broken install rather than a PATH problem.
+			warning := resolver.DiscoveryWarning()
+			if warning == "" {
+				t.Fatal("DiscoveryWarning() = \"\", want the fallback reason retained")
+			}
+			if !strings.Contains(warning, "/bin/example-shell") {
+				t.Fatalf("DiscoveryWarning() = %q, want the shell named", warning)
+			}
 		})
 	}
+}
+
+func TestPathResolverDiscoveryWarning(t *testing.T) {
+	t.Parallel()
+
+	t.Run("successful discovery leaves no warning", func(t *testing.T) {
+		t.Parallel()
+		resolver := &PathResolver{
+			processPath: "/fallback/bin",
+			shell:       "/bin/example-shell",
+			goos:        "darwin",
+			timeout:     time.Second,
+			discover: func(context.Context, string) (string, error) {
+				return "/discovered/bin", nil
+			},
+		}
+		if _, err := resolver.ResolvedPath(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		if got := resolver.DiscoveryWarning(); got != "" {
+			t.Fatalf("DiscoveryWarning() = %q, want empty", got)
+		}
+	})
+
+	t.Run("an empty PATH from the shell is reported", func(t *testing.T) {
+		t.Parallel()
+		resolver := &PathResolver{
+			processPath: "/fallback/bin",
+			shell:       "/bin/example-shell",
+			goos:        "darwin",
+			timeout:     time.Second,
+			discover: func(context.Context, string) (string, error) {
+				return "", nil
+			},
+		}
+		if _, err := resolver.ResolvedPath(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		if got := resolver.DiscoveryWarning(); !strings.Contains(got, "no PATH") {
+			t.Fatalf("DiscoveryWarning() = %q, want an empty-PATH explanation", got)
+		}
+	})
+
+	// An explicit override replaces discovery entirely, so a stale discovery
+	// failure is no longer something the user needs to act on.
+	t.Run("an override suppresses the warning", func(t *testing.T) {
+		t.Parallel()
+		resolver := &PathResolver{
+			processPath: "/fallback/bin",
+			shell:       "/bin/example-shell",
+			goos:        "darwin",
+			timeout:     time.Second,
+			discover: func(context.Context, string) (string, error) {
+				return "", errors.New("login failed")
+			},
+		}
+		if _, err := resolver.ResolvedPath(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		if resolver.DiscoveryWarning() == "" {
+			t.Fatal("DiscoveryWarning() = \"\", want a warning before the override")
+		}
+		if err := resolver.SetOverride("/manual/bin"); err != nil {
+			t.Fatal(err)
+		}
+		if got := resolver.DiscoveryWarning(); got != "" {
+			t.Fatalf("DiscoveryWarning() = %q, want empty once overridden", got)
+		}
+	})
+
+	t.Run("windows never attempts discovery", func(t *testing.T) {
+		t.Parallel()
+		resolver := &PathResolver{
+			processPath: `C:\node`,
+			shell:       "powershell.exe",
+			goos:        "windows",
+			timeout:     time.Second,
+			discover: func(context.Context, string) (string, error) {
+				t.Fatal("discovery ran on Windows")
+				return "", nil
+			},
+		}
+		if _, err := resolver.ResolvedPath(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		if got := resolver.DiscoveryWarning(); got != "" {
+			t.Fatalf("DiscoveryWarning() = %q, want empty", got)
+		}
+	})
 }
 
 func TestPathResolverWindowsNeverLaunchesLoginShell(t *testing.T) {

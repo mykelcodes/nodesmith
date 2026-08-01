@@ -203,7 +203,7 @@
 								loading={pickingDirectory}
 								aria-label="Choose default parent directory"
 							>
-								<Icon name="folder" class="size-4" />
+								{#snippet icon()}<Icon name="folder" class="size-4" />{/snippet}
 								Choose
 							</Button>
 						</div>
@@ -330,7 +330,7 @@
 
 		<footer class="flex justify-end lg:col-span-2">
 			<Button type="submit" loading={saving}>
-				<Icon name="check" class="size-4" />
+				{#snippet icon()}<Icon name="check" class="size-4" />{/snippet}
 				Save settings
 			</Button>
 		</footer>

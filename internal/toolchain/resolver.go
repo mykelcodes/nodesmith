@@ -184,8 +184,8 @@ func (r *Resolver) resolveWindowsShimNode(
 
 // ResolveContext is Resolve with caller cancellation for PATH discovery.
 func (r *Resolver) ResolveContext(ctx context.Context, name string) (string, error) {
-	if err := validateBinaryName(name); err != nil {
-		return "", err
+	if !IsAllowed(name) {
+		return "", fmt.Errorf("%w: %q", ErrBinaryNotAllowed, name)
 	}
 	pathValue, err := r.paths.ResolvedPath(ctx)
 	if err != nil {
@@ -250,30 +250,6 @@ func windowsCandidates(name string) []string {
 	// them as a last-resort discovery result so they cannot shadow npm.cmd.
 	candidates = append(candidates, name)
 	return candidates
-}
-
-func replacePATH(environment []string, pathValue string, goos string) []string {
-	result := make([]string, 0, len(environment)+1)
-	replaced := false
-	for _, entry := range environment {
-		key, _, _ := strings.Cut(entry, "=")
-		isPath := key == "PATH"
-		if goos == "windows" {
-			isPath = strings.EqualFold(key, "PATH")
-		}
-		if isPath {
-			if !replaced {
-				result = append(result, "PATH="+pathValue)
-				replaced = true
-			}
-			continue
-		}
-		result = append(result, entry)
-	}
-	if !replaced {
-		result = append(result, "PATH="+pathValue)
-	}
-	return result
 }
 
 var defaultResolver = NewResolver(defaultPathResolver)

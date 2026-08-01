@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -40,19 +41,49 @@ func NewRecipeService(
 	if err != nil {
 		return nil, fmt.Errorf("load bundled recipes: %w", err)
 	}
-	return &RecipeService{
+	service := &RecipeService{
 		bridge:   bridge,
 		embedded: embedded,
 		userDir:  userDir,
 		detector: detector,
 		registry: registry,
 		report:   report,
-	}, nil
+	}
+	// The startup load report is produced before any interface exists. Replay
+	// it once the web view can receive events, otherwise a user recipe that
+	// failed to validate is skipped in complete silence at launch and only
+	// becomes visible if the user happens to press Reload.
+	bridge.OnUIReady(service.emitLoadReport)
+	return service, nil
+}
+
+func (service *RecipeService) emitLoadReport(ctx context.Context) {
+	service.mu.RLock()
+	report := service.report
+	count := service.registry.Len()
+	service.mu.RUnlock()
+
+	if len(report.Warnings) == 0 && len(report.Overrides) == 0 {
+		return
+	}
+	runtime.EventsEmit(ctx, "nodesmith:recipes:reloaded", ReloadResult{
+		Count:     count,
+		Warnings:  cloneSlice(report.Warnings),
+		Overrides: cloneSlice(report.Overrides),
+	})
 }
 
 // List returns deterministic catalogue summaries with current availability.
+//
+// The error return is reachable: Registry.List clones each manifest and reports
+// a clone failure rather than handing out registry-aliased slices. Toolchain
+// detection failures are not errors here — they are folded into each summary's
+// UnavailableReasons so the catalogue still renders.
 func (service *RecipeService) List() ([]RecipeSummary, error) {
-	manifests := service.listManifests()
+	manifests, err := service.listManifests()
+	if err != nil {
+		return nil, err
+	}
 	detected, detectionErr := service.detector.Detect(service.bridge.get(), false)
 	summaries := make([]RecipeSummary, 0, len(manifests))
 	for _, manifest := range manifests {
@@ -136,11 +167,14 @@ func (service *RecipeService) OpenRecipeDir() error {
 	return nil
 }
 
-func (service *RecipeService) listManifests() []recipe.Manifest {
+func (service *RecipeService) listManifests() ([]recipe.Manifest, error) {
 	service.mu.RLock()
-	manifests := service.registry.List()
+	manifests, err := service.registry.List()
 	service.mu.RUnlock()
-	return manifests
+	if err != nil {
+		return nil, fmt.Errorf("load recipes: %w", err)
+	}
+	return manifests, nil
 }
 
 func (service *RecipeService) getManifest(id string) (recipe.Manifest, error) {
@@ -184,6 +218,12 @@ func recipeDTO(manifest recipe.Manifest) (Recipe, error) {
 			Help:      field.Help,
 			Options:   options,
 			VisibleIf: field.VisibleIf,
+			Required:  field.Required,
+			Pattern:   field.Pattern,
+			MinLength: clonePointer(field.MinLength),
+			MaxLength: clonePointer(field.MaxLength),
+			Min:       clonePointer(field.Min),
+			Max:       clonePointer(field.Max),
 		})
 	}
 
@@ -209,15 +249,15 @@ func recipeDTO(manifest recipe.Manifest) (Recipe, error) {
 	}
 
 	return Recipe{
-		SchemaVersion: manifest.SchemaVersion,
-		ID:            manifest.ID,
-		Name:          manifest.Name,
-		Category:      manifest.Category,
-		Description:   manifest.Description,
-		DocsURL:       manifest.DocsURL,
-		Tags:          cloneSlice(manifest.Tags),
-		Icon:          manifest.Icon,
-		VerifiedAt:    manifest.VerifiedAt,
+		SchemaVersion:     manifest.SchemaVersion,
+		ID:                manifest.ID,
+		Name:              manifest.Name,
+		Category:          manifest.Category,
+		Description:       manifest.Description,
+		DocsURL:           manifest.DocsURL,
+		Tags:              cloneSlice(manifest.Tags),
+		Icon:              manifest.Icon,
+		VerifiedAt:        manifest.VerifiedAt,
 		InstallPolicy:     normalizedInstallPolicy(manifest),
 		MinimumReleaseAge: cloneMinutes(manifest.MinimumReleaseAge),
 		Requires: RecipeRequirements{

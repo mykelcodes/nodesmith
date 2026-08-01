@@ -51,7 +51,7 @@ func ParseSemanticVersion(value string) (SemanticVersion, error) {
 	if before, after, found := strings.Cut(value, "-"); found {
 		value = before
 		prerelease = after
-		if !validIdentifiers(prerelease) {
+		if !validPrereleaseIdentifiers(prerelease) {
 			return SemanticVersion{}, fmt.Errorf("invalid prerelease in %q", original)
 		}
 	}
@@ -79,6 +79,34 @@ func ParseSemanticVersion(value string) (SemanticVersion, error) {
 		Prerelease: prerelease,
 		Build:      build,
 	}, nil
+}
+
+// validPrereleaseIdentifiers additionally applies the semantic-version rule
+// that a numeric prerelease identifier must not carry leading zeros. Allowing
+// them would let two identifiers compare equal numerically while differing as
+// strings, which no total ordering can express.
+func validPrereleaseIdentifiers(value string) bool {
+	if !validIdentifiers(value) {
+		return false
+	}
+	for _, identifier := range strings.Split(value, ".") {
+		if numericIdentifier(identifier) && len(identifier) > 1 && identifier[0] == '0' {
+			return false
+		}
+	}
+	return true
+}
+
+func numericIdentifier(identifier string) bool {
+	if identifier == "" {
+		return false
+	}
+	for _, character := range identifier {
+		if character < '0' || character > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 func validIdentifiers(value string) bool {
@@ -166,10 +194,16 @@ func comparePrerelease(left string, right string) int {
 			}
 		}
 	}
+	// A larger set of prerelease identifiers has higher precedence when all
+	// preceding identifiers are equal. Equal counts must return 0: returning a
+	// non-zero value in both directions would make Compare non-antisymmetric.
 	if len(leftParts) < len(rightParts) {
 		return -1
 	}
-	return 1
+	if len(leftParts) > len(rightParts) {
+		return 1
+	}
+	return 0
 }
 
 // SatisfiesRange evaluates an AND-only semantic version range. Supported

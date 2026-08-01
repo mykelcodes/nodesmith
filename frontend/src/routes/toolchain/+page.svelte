@@ -100,7 +100,7 @@
 		</p>
 	</div>
 	<Button variant="secondary" onclick={() => load(true)} loading={rescanning}>
-		{#if !rescanning}<Icon name="refresh" class="size-4" />{/if}
+		{#snippet icon()}<Icon name="refresh" class="size-4" />{/snippet}
 		Rescan tools
 	</Button>
 </header>
@@ -139,6 +139,23 @@
 		</EmptyState>
 	</div>
 {:else}
+	{#if toolchain.pathWarning}
+		<!--
+			Discovery failing is not fatal — the process PATH still works — but it is
+			the usual reason every tool below reads as missing. Showing it here puts
+			the cause where the user is already looking at the symptom.
+		-->
+		<div
+			class="mt-5 flex gap-3 rounded-control border border-warning/30 bg-warning-soft px-4 py-3 text-sm text-warning"
+			role="status"
+		>
+			<Icon name="triangleAlert" class="mt-0.5 size-4 shrink-0" />
+			<p class="leading-6">
+				{toolchain.pathWarning} Set a manual override below if tools are missing.
+			</p>
+		</div>
+	{/if}
+
 	<section class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Detected tools">
 		{#each toolchain.tools as tool (tool.name)}
 			<article class="rounded-panel border border-line bg-panel/75 p-4 shadow-sm">

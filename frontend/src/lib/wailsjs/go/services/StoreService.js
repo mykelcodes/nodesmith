@@ -6,6 +6,10 @@ export function ClearHistory() {
   return window['go']['services']['StoreService']['ClearHistory']();
 }
 
+export function DeleteHistoryEntry(arg1) {
+  return window['go']['services']['StoreService']['DeleteHistoryEntry'](arg1);
+}
+
 export function DeletePreset(arg1) {
   return window['go']['services']['StoreService']['DeletePreset'](arg1);
 }

@@ -58,6 +58,11 @@ function number(value: unknown, path: string): number {
 	return value;
 }
 
+function nullableNumber(value: unknown, path: string): number | null {
+	if (value === null || value === undefined) return null;
+	return number(value, path);
+}
+
 function integer(value: unknown, path: string): number {
 	const result = number(value, path);
 	if (!Number.isInteger(result)) return invalid(path, 'an integer');
@@ -135,7 +140,15 @@ function recipeField(value: unknown, path: string): RecipeField {
 		label: string(source.label, `${path}.label`),
 		help: string(source.help, `${path}.help`),
 		options: array(source.options, `${path}.options`, recipeOption),
-		visibleIf: string(source.visibleIf, `${path}.visibleIf`)
+		visibleIf: string(source.visibleIf, `${path}.visibleIf`),
+		required: boolean(source.required, `${path}.required`),
+		pattern: string(source.pattern, `${path}.pattern`),
+		// Optional bounds arrive as JSON null when the recipe does not declare
+		// them, because the Go side models them as pointers.
+		minLength: nullableNumber(source.minLength, `${path}.minLength`),
+		maxLength: nullableNumber(source.maxLength, `${path}.maxLength`),
+		min: nullableNumber(source.min, `${path}.min`),
+		max: nullableNumber(source.max, `${path}.max`)
 	};
 	const type = oneOf(source.type, `${path}.type`, [
 		'select',
@@ -285,7 +298,8 @@ export function parseToolchain(value: unknown, path = 'Toolchain'): Toolchain {
 	return {
 		path: string(source.path, `${path}.path`),
 		detectedAt: isoTime(source.detectedAt, `${path}.detectedAt`),
-		tools: array(source.tools, `${path}.tools`, parseTool)
+		tools: array(source.tools, `${path}.tools`, parseTool),
+		pathWarning: string(source.pathWarning, `${path}.pathWarning`)
 	};
 }
 
@@ -494,7 +508,8 @@ export function parseRecipesReloadedEvent(
 	const source = object(value, path);
 	return {
 		count: integer(source.count, `${path}.count`),
-		warnings: stringArray(source.warnings, `${path}.warnings`)
+		warnings: stringArray(source.warnings, `${path}.warnings`),
+		overrides: stringArray(source.overrides, `${path}.overrides`)
 	};
 }
 

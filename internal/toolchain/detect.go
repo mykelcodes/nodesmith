@@ -10,6 +10,9 @@ import (
 	"runtime"
 	"sync"
 	"time"
+
+	"nodesmith/internal/allowlist"
+	"nodesmith/internal/environ"
 )
 
 const (
@@ -121,25 +124,24 @@ func (detector *Detector) Detect(ctx context.Context, force bool) (Toolchain, er
 	}
 	detector.mu.Unlock()
 
-	type detection struct {
-		name string
-		tool Tool
-	}
-	results := make(chan detection, len(detectedBinaries))
+	// The set of names is fixed and known up front, so each goroutine owns one
+	// slot in a pre-sized slice. That needs no channel, no buffering decision,
+	// and no drain loop to collect the results.
+	names := allowlist.Detected()
+	detected := make([]Tool, len(names))
 	var wait sync.WaitGroup
-	for _, name := range detectedBinaries {
-		wait.Add(1)
+	wait.Add(len(names))
+	for index, name := range names {
 		go func() {
 			defer wait.Done()
-			results <- detection{name: name, tool: detector.detectOne(ctx, name, pathValue)}
+			detected[index] = detector.detectOne(ctx, name, pathValue)
 		}()
 	}
 	wait.Wait()
-	close(results)
 
-	tools := make(map[string]Tool, len(detectedBinaries))
-	for result := range results {
-		tools[result.name] = result.tool
+	tools := make(map[string]Tool, len(names))
+	for index, name := range names {
+		tools[name] = detected[index]
 	}
 	toolchain := Toolchain{
 		Path:       pathValue,
@@ -239,7 +241,7 @@ func probeVersion(
 	args = append(append([]string(nil), prefixArgs...), args...)
 	cmd := exec.CommandContext(ctx, path, args...)
 	cmd.WaitDelay = probeWaitDelay
-	cmd.Env = replacePATH(os.Environ(), pathValue, runtime.GOOS)
+	cmd.Env = environ.WithPATH(os.Environ(), pathValue, runtime.GOOS)
 
 	var output bytes.Buffer
 	cmd.Stdout = &output

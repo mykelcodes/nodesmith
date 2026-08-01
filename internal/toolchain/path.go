@@ -32,6 +32,13 @@ type PathResolver struct {
 	cached   string
 	resolved bool
 
+	// discoveryError records why login-shell discovery did not produce a PATH.
+	// Swallowing it entirely is what makes the common macOS failure invisible: a
+	// Finder-launched app inherits the minimal system PATH without Homebrew,
+	// nvm, fnm, or volta, every tool then looks missing, and the doctor view
+	// shows only the symptom.
+	discoveryError string
+
 	resolving bool
 	wait      chan struct{}
 
@@ -106,17 +113,35 @@ func (r *PathResolver) ResolvedPath(ctx context.Context) (string, error) {
 		r.mu.Unlock()
 
 		path := processPath
+		discoveryError := ""
 		if goos != "windows" && shell != "" {
 			discoveryCtx, cancel := context.WithTimeout(ctx, timeout)
 			discovered, err := discover(discoveryCtx, shell)
 			cancel()
-			if err == nil && discovered != "" {
+			switch {
+			case err != nil:
+				discoveryError = fmt.Sprintf(
+					"PATH discovery through the login shell %s failed (%v); using the PATH "+
+						"Nodesmith was started with. Tools installed by Homebrew or a Node "+
+						"version manager may not be found.",
+					shell,
+					err,
+				)
+			case discovered == "":
+				discoveryError = fmt.Sprintf(
+					"The login shell %s returned no PATH; using the PATH Nodesmith was "+
+						"started with. Tools installed by Homebrew or a Node version "+
+						"manager may not be found.",
+					shell,
+				)
+			default:
 				path = discovered
 			}
 		}
 
 		r.mu.Lock()
 		r.cached = path
+		r.discoveryError = discoveryError
 		r.resolved = true
 		r.resolving = false
 		close(wait)
@@ -126,6 +151,20 @@ func (r *PathResolver) ResolvedPath(ctx context.Context) (string, error) {
 		r.mu.Unlock()
 		return path, nil
 	}
+}
+
+// DiscoveryWarning returns a human-readable explanation of why login-shell PATH
+// discovery did not produce a PATH, or an empty string when discovery succeeded,
+// was not attempted, or has not run yet. Discovery failing is not fatal —
+// ResolvedPath still returns the process PATH — but it is the root cause of
+// "every tool is missing", so it belongs in the doctor view.
+func (r *PathResolver) DiscoveryWarning() string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.override != "" {
+		return ""
+	}
+	return r.discoveryError
 }
 
 // SetOverride changes the effective PATH without restarting the application.
@@ -146,6 +185,11 @@ func discoverLoginShellPATH(ctx context.Context, shell string) (string, error) {
 	// This is the sole shell invocation in the core. The command text is a
 	// constant, and the shell plus each option are supplied as distinct argv
 	// elements. No user or recipe value is interpolated into command text.
+	//
+	// -i is deliberate despite sourcing interactive startup files: nvm, fnm, and
+	// Volta all install their PATH setup into .zshrc/.bashrc, which -l alone does
+	// not read. See docs/adr/002-login-shell-path-discovery.md. The hang risk
+	// that -i introduces is bounded by the context deadline plus WaitDelay below.
 	cmd := exec.CommandContext(ctx, shell, "-l", "-i", "-c", "env")
 	cmd.WaitDelay = loginShellWaitDelay
 	output, err := cmd.Output()

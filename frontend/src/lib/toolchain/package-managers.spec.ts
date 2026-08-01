@@ -21,7 +21,8 @@ function toolchain(tools: Tool[]): Toolchain {
 	return {
 		path: '/bin',
 		detectedAt: '2026-07-28T12:00:00Z',
-		tools
+		tools,
+		pathWarning: ''
 	};
 }
 

@@ -282,46 +282,6 @@ func TestResolveInPathMissing(t *testing.T) {
 	}
 }
 
-func TestReplacePATH(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name        string
-		environment []string
-		path        string
-		goos        string
-		want        []string
-	}{
-		{
-			name:        "unix replaces exact key",
-			environment: []string{"A=1", "PATH=/old", "B=2"},
-			path:        "/new",
-			goos:        "linux",
-			want:        []string{"A=1", "PATH=/new", "B=2"},
-		},
-		{
-			name:        "windows replaces case insensitively and deduplicates",
-			environment: []string{"Path=old", "A=1", "PATH=duplicate"},
-			path:        `C:\new`,
-			goos:        "windows",
-			want:        []string{`PATH=C:\new`, "A=1"},
-		},
-		{
-			name:        "adds missing",
-			environment: []string{"A=1"},
-			path:        "/new",
-			goos:        "darwin",
-			want:        []string{"A=1", "PATH=/new"},
-		},
-	}
-	for _, test := range tests {
-		test := test
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-			got := replacePATH(test.environment, test.path, test.goos)
-			if !reflect.DeepEqual(got, test.want) {
-				t.Fatalf("replacePATH() = %#v, want %#v", got, test.want)
-			}
-		})
-	}
-}
+// PATH replacement moved to internal/environ, which is now the single
+// implementation shared by the runner, the detector, and editor launch.
+// See internal/environ/environ_test.go.

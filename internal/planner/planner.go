@@ -220,6 +220,25 @@ func resolveValues(manifest recipe.Manifest, request ScaffoldRequest, projectDir
 	values["packageManager"] = request.PackageManager
 	values["installDeps"] = request.InstallDeps
 	values["gitInit"] = request.GitInit
+
+	// Required is checked last, against the fully merged values, because
+	// VisibleIf may reference any other field. A field the user never saw must
+	// not block the plan.
+	for _, field := range manifest.Fields {
+		if !field.Required {
+			continue
+		}
+		if _, answered := request.Answers[field.ID]; answered {
+			continue
+		}
+		visible, err := evaluateWhen(field.VisibleIf, values)
+		if err != nil {
+			return nil, fmt.Errorf("fields.%s.visibleIf: %w", field.ID, err)
+		}
+		if visible {
+			return nil, fmt.Errorf("answers.%s: %q requires an answer", field.ID, field.Label)
+		}
+	}
 	return values, nil
 }
 
@@ -261,10 +280,16 @@ func validateAnswer(field recipe.Field, value any) (any, error) {
 		if !ok {
 			return nil, fmt.Errorf("text answer must be a string, got %T", value)
 		}
+		if err := recipe.CheckFieldConstraints(field, text); err != nil {
+			return nil, err
+		}
 		return text, nil
 	case recipe.FieldNumber:
 		if !isNumber(value) {
 			return nil, fmt.Errorf("number answer must be numeric, got %T", value)
+		}
+		if err := recipe.CheckFieldConstraints(field, value); err != nil {
+			return nil, err
 		}
 		return value, nil
 	default:
@@ -372,6 +397,14 @@ func substitute(template string, values map[string]any) (string, error) {
 	}
 }
 
+// stringValue renders a decoded value as a single argv element.
+//
+// Only the types encoding/json can actually produce are handled. Recipe
+// manifests and user answers both reach this code through recipe.Decode, which
+// calls UseNumber, so every number arrives as json.Number; float64 is retained
+// because a caller constructing values without a decoder would still produce
+// it, and its formatting feeds argv and therefore the plan hash. The int and
+// uint arms this function used to carry were unreachable.
 func stringValue(value any) (string, error) {
 	switch typed := value.(type) {
 	case string:
@@ -385,28 +418,6 @@ func stringValue(value any) (string, error) {
 		return typed.String(), nil
 	case float64:
 		return strconv.FormatFloat(typed, 'g', -1, 64), nil
-	case float32:
-		return strconv.FormatFloat(float64(typed), 'g', -1, 32), nil
-	case int:
-		return strconv.Itoa(typed), nil
-	case int8:
-		return strconv.FormatInt(int64(typed), 10), nil
-	case int16:
-		return strconv.FormatInt(int64(typed), 10), nil
-	case int32:
-		return strconv.FormatInt(int64(typed), 10), nil
-	case int64:
-		return strconv.FormatInt(typed, 10), nil
-	case uint:
-		return strconv.FormatUint(uint64(typed), 10), nil
-	case uint8:
-		return strconv.FormatUint(uint64(typed), 10), nil
-	case uint16:
-		return strconv.FormatUint(uint64(typed), 10), nil
-	case uint32:
-		return strconv.FormatUint(uint64(typed), 10), nil
-	case uint64:
-		return strconv.FormatUint(typed, 10), nil
 	default:
 		return "", fmt.Errorf("value of type %T cannot be substituted into one argv element", value)
 	}
@@ -530,13 +541,15 @@ func answerStringSlice(value any) ([]string, bool) {
 	}
 }
 
+// isNumber reports whether value is a numeric answer. A json.Number that does
+// not parse is not a usable number, which is the one case that needs more than
+// a type test.
 func isNumber(value any) bool {
-	_, err := stringValue(value)
-	if err != nil {
-		return false
-	}
-	switch value.(type) {
-	case json.Number, float64, float32, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+	switch typed := value.(type) {
+	case json.Number:
+		_, err := typed.Float64()
+		return err == nil
+	case float64:
 		return true
 	default:
 		return false

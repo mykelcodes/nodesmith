@@ -48,7 +48,10 @@ func TestResolveBundledRecipeGoldens(t *testing.T) {
 	if err != nil {
 		t.Fatalf("load bundled recipes: %v", err)
 	}
-	manifests := registry.List()
+	manifests, err := registry.List()
+	if err != nil {
+		t.Fatalf("list bundled recipes: %v", err)
+	}
 	if len(manifests) != 14 {
 		t.Fatalf("bundled recipe count = %d, want 14", len(manifests))
 	}
@@ -646,18 +649,14 @@ func TestStringValueScalarTypes(t *testing.T) {
 		{name: "json number", value: json.Number("1.25"), want: "1.25"},
 		{name: "invalid json number", value: json.Number("invalid"), wantErr: "invalid JSON number"},
 		{name: "float64", value: float64(1.25), want: "1.25"},
-		{name: "float32", value: float32(1.25), want: "1.25"},
-		{name: "int", value: int(-1), want: "-1"},
-		{name: "int8", value: int8(-8), want: "-8"},
-		{name: "int16", value: int16(-16), want: "-16"},
-		{name: "int32", value: int32(-32), want: "-32"},
-		{name: "int64", value: int64(-64), want: "-64"},
-		{name: "uint", value: uint(1), want: "1"},
-		{name: "uint8", value: uint8(8), want: "8"},
-		{name: "uint16", value: uint16(16), want: "16"},
-		{name: "uint32", value: uint32(32), want: "32"},
-		{name: "uint64", value: uint64(64), want: "64"},
 		{name: "unsupported", value: []string{"one"}, wantErr: "cannot be substituted"},
+		// Recipe values and answers are decoded with UseNumber, so these types
+		// cannot reach argv substitution. Asserting the rejection keeps the
+		// narrowed type switch honest.
+		{name: "int is unreachable from the decoder", value: int(-1), wantErr: "cannot be substituted"},
+		{name: "int64 is unreachable from the decoder", value: int64(-64), wantErr: "cannot be substituted"},
+		{name: "uint64 is unreachable from the decoder", value: uint64(64), wantErr: "cannot be substituted"},
+		{name: "float32 is unreachable from the decoder", value: float32(1.25), wantErr: "cannot be substituted"},
 	}
 	for _, test := range tests {
 		test := test

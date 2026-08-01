@@ -8,6 +8,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"nodesmith/internal/allowlist"
 )
 
 func TestVersionArgumentsUseSupportedToolSyntax(t *testing.T) {
@@ -64,7 +66,7 @@ func TestDetectorCachesForSixtySecondsAndForceBypasses(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Detect() error = %v", err)
 	}
-	if got := resolver.resolves.Load(); got != int32(len(detectedBinaries)) {
+	if got := resolver.resolves.Load(); got != int32(len(allowlist.Detected())) {
 		t.Fatalf("resolve calls = %d", got)
 	}
 
@@ -82,14 +84,14 @@ func TestDetectorCachesForSixtySecondsAndForceBypasses(t *testing.T) {
 	if _, found := second.Tools["node"]; !found {
 		t.Fatal("cached Toolchain was mutated by caller")
 	}
-	if got := resolver.resolves.Load(); got != int32(len(detectedBinaries)) {
+	if got := resolver.resolves.Load(); got != int32(len(allowlist.Detected())) {
 		t.Fatalf("warm resolve calls = %d, want unchanged", got)
 	}
 
 	if _, err := detector.Detect(context.Background(), true); err != nil {
 		t.Fatalf("forced Detect() error = %v", err)
 	}
-	if got := resolver.resolves.Load(); got != int32(2*len(detectedBinaries)) {
+	if got := resolver.resolves.Load(); got != int32(2*len(allowlist.Detected())) {
 		t.Fatalf("forced resolve calls = %d", got)
 	}
 }
@@ -110,7 +112,7 @@ func TestDetectorExpiresAtSixtySecondsAndPathChangeInvalidates(t *testing.T) {
 	if _, err := detector.Detect(context.Background(), false); err != nil {
 		t.Fatal(err)
 	}
-	if got := resolver.resolves.Load(); got != int32(2*len(detectedBinaries)) {
+	if got := resolver.resolves.Load(); got != int32(2*len(allowlist.Detected())) {
 		t.Fatalf("post-expiry resolve calls = %d", got)
 	}
 
@@ -118,7 +120,7 @@ func TestDetectorExpiresAtSixtySecondsAndPathChangeInvalidates(t *testing.T) {
 	if _, err := detector.Detect(context.Background(), false); err != nil {
 		t.Fatal(err)
 	}
-	if got := resolver.resolves.Load(); got != int32(3*len(detectedBinaries)) {
+	if got := resolver.resolves.Load(); got != int32(3*len(allowlist.Detected())) {
 		t.Fatalf("post-PATH-change resolve calls = %d", got)
 	}
 }

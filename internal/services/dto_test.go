@@ -36,7 +36,7 @@ func TestDTOsEncodeEmptySlicesAsArrays(t *testing.T) {
 	assertNoNullArray(t, "Recipe", full)
 
 	assertNoNullArray(t, "Plan", planDTO(planner.Plan{Steps: []planner.PlanStep{{ID: "one"}}}))
-	assertNoNullArray(t, "Toolchain", toolchainDTO(toolchain.Toolchain{}))
+	assertNoNullArray(t, "Toolchain", toolchainDTO(toolchain.Toolchain{}, ""))
 	assertNoNullArray(t, "ReloadResult", ReloadResult{
 		Warnings:  cloneSlice[string](nil),
 		Overrides: cloneSlice[string](nil),

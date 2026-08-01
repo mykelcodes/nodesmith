@@ -45,7 +45,10 @@ func TestLoadRegistryOverridesAndOrdersRecipes(t *testing.T) {
 	if len(report.Warnings) != 1 || !strings.Contains(report.Warnings[0], "broken.json") {
 		t.Fatalf("Warnings = %v, want broken.json warning", report.Warnings)
 	}
-	list := registry.List()
+	list, err := registry.List()
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
 	if len(list) != 2 || list[0].ID != "alpha" || list[1].ID != "zulu" {
 		t.Fatalf("List() ids = %v, want alpha,zulu", []string{list[0].ID, list[1].ID})
 	}
@@ -162,8 +165,59 @@ func TestLoadRegistryFailureModes(t *testing.T) {
 	if _, err := (*Registry)(nil).Get("missing"); err == nil {
 		t.Fatal("nil Registry.Get unexpectedly succeeded")
 	}
-	if (*Registry)(nil).Len() != 0 || len((*Registry)(nil).List()) != 0 {
+	nilList, nilErr := (*Registry)(nil).List()
+	if nilErr != nil {
+		t.Fatalf("nil Registry.List() error = %v", nilErr)
+	}
+	if (*Registry)(nil).Len() != 0 || len(nilList) != 0 {
 		t.Fatal("nil registry accessors returned non-empty values")
+	}
+}
+
+func TestGetReturnsAnIsolatedCopy(t *testing.T) {
+	t.Parallel()
+
+	registry, _, err := Load(os.DirFS("../../recipes"), "")
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	manifests, err := registry.List()
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if len(manifests) == 0 {
+		t.Fatal("List() returned no manifests")
+	}
+	id := manifests[0].ID
+
+	first, err := registry.Get(id)
+	if err != nil {
+		t.Fatalf("Get(%q) error = %v", id, err)
+	}
+	if len(first.Tags) == 0 || len(first.Steps) == 0 {
+		t.Fatalf("recipe %q has nothing shared to mutate", id)
+	}
+	originalTag := first.Tags[0]
+	originalCI := first.Steps[0].Env["CI"]
+
+	// A caller that mutates its copy must not be able to reach the registry's
+	// stored manifest through the slices and maps inside it.
+	first.Tags[0] = "mutated"
+	first.Steps[0].Env["CI"] = "mutated"
+
+	second, err := registry.Get(id)
+	if err != nil {
+		t.Fatalf("second Get(%q) error = %v", id, err)
+	}
+	if second.Tags[0] != originalTag {
+		t.Fatalf("Tags[0] = %q, want %q: Get returned an aliased manifest", second.Tags[0], originalTag)
+	}
+	if second.Steps[0].Env["CI"] != originalCI {
+		t.Fatalf(
+			"Steps[0].Env[CI] = %q, want %q: Get returned an aliased manifest",
+			second.Steps[0].Env["CI"],
+			originalCI,
+		)
 	}
 }
 

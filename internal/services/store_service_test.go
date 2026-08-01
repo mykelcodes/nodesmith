@@ -7,9 +7,9 @@ import (
 )
 
 func TestStoreServiceSettingsPresetsAndHistory(t *testing.T) {
-	service, err := NewStoreService(t.TempDir(), filepath.Join(t.TempDir(), "projects"))
+	service, err := NewStoreService(nil, t.TempDir(), filepath.Join(t.TempDir(), "projects"))
 	if err != nil {
-		t.Fatalf("NewStoreService() error = %v", err)
+		t.Fatalf("NewStoreService(nil, ) error = %v", err)
 	}
 	fixedNow := time.Date(2026, 7, 28, 12, 0, 0, 0, time.UTC)
 	service.now = func() time.Time { return fixedNow }
@@ -113,9 +113,9 @@ func TestStoreServiceSettingsPresetsAndHistory(t *testing.T) {
 }
 
 func TestStoreServiceRejectsInvalidSettingsAndMissingRecords(t *testing.T) {
-	service, err := NewStoreService(t.TempDir(), "")
+	service, err := NewStoreService(nil, t.TempDir(), "")
 	if err != nil {
-		t.Fatalf("NewStoreService() error = %v", err)
+		t.Fatalf("NewStoreService(nil, ) error = %v", err)
 	}
 	if err := service.SaveSettings(Settings{Theme: "sepia", Editor: "code"}); err == nil {
 		t.Fatal("SaveSettings(invalid theme) error = nil")

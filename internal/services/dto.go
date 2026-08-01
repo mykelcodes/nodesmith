@@ -10,6 +10,15 @@ func cloneSlice[T any](source []T) []T {
 	return result
 }
 
+// clonePointer copies an optional scalar so a DTO never aliases registry state.
+func clonePointer[T any](source *T) *T {
+	if source == nil {
+		return nil
+	}
+	value := *source
+	return &value
+}
+
 // RecipeSummary is the catalogue representation of a recipe.
 type RecipeSummary struct {
 	ID                    string   `json:"id"`
@@ -40,7 +49,9 @@ type RecipeOption struct {
 	Label string `json:"label"`
 }
 
-// RecipeField drives one input in the configuration form.
+// RecipeField drives one input in the configuration form. The constraint fields
+// mirror recipe.Field so the form can reject a bad answer before the bridge
+// call; the planner enforces the same rules again and remains authoritative.
 type RecipeField struct {
 	ID        string         `json:"id"`
 	Label     string         `json:"label"`
@@ -49,6 +60,12 @@ type RecipeField struct {
 	Help      string         `json:"help"`
 	Options   []RecipeOption `json:"options"`
 	VisibleIf string         `json:"visibleIf"`
+	Required  bool           `json:"required"`
+	Pattern   string         `json:"pattern"`
+	MinLength *int           `json:"minLength"`
+	MaxLength *int           `json:"maxLength"`
+	Min       *float64       `json:"min"`
+	Max       *float64       `json:"max"`
 }
 
 // RecipeStep exposes a recipe step for recipe inspection and authoring tools.
@@ -109,6 +126,9 @@ type Toolchain struct {
 	Path       string    `json:"path"`
 	DetectedAt time.Time `json:"detectedAt"`
 	Tools      []Tool    `json:"tools"`
+	// PathWarning explains why the PATH above is the process PATH rather than
+	// the login shell's. Empty when discovery succeeded or was not attempted.
+	PathWarning string `json:"pathWarning"`
 }
 
 // ScaffoldRequest contains built-in and recipe-specific answers.

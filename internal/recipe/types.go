@@ -69,6 +69,32 @@ type Field struct {
 	Help      string    `json:"help,omitempty"`
 	Options   []Option  `json:"options,omitempty"`
 	VisibleIf string    `json:"visibleIf,omitempty"`
+
+	// Value constraints. All are optional and all are additive, so manifests
+	// written before they existed stay valid and CurrentSchemaVersion is
+	// unchanged.
+	//
+	// These do not exist to prevent command injection — execution is argv-only
+	// with no shell, and every binary is allowlisted and resolved to an absolute
+	// path. They exist because an unconstrained answer is substituted straight
+	// into argv, where a value beginning with "-" is read by the generator as a
+	// flag, an empty string arrives where a token is expected, and a
+	// several-kilobyte value can trip an OS argv limit.
+
+	// Required makes an explicit answer mandatory instead of silently falling
+	// back to Default. It is enforced only when the field is visible, so a field
+	// hidden by VisibleIf never blocks a plan.
+	Required bool `json:"required,omitempty"`
+	// Pattern is an RE2 expression a text answer must match. It is compiled when
+	// the manifest loads, not per answer. It is unanchored: use ^ and $ to match
+	// the whole value.
+	Pattern string `json:"pattern,omitempty"`
+	// MinLength and MaxLength bound a text answer in UTF-8 runes, not bytes.
+	MinLength *int `json:"minLength,omitempty"`
+	MaxLength *int `json:"maxLength,omitempty"`
+	// Min and Max bound a number answer inclusively.
+	Min *float64 `json:"min,omitempty"`
+	Max *float64 `json:"max,omitempty"`
 }
 
 type FieldType string

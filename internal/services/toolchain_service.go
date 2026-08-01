@@ -50,7 +50,7 @@ func (service *ToolchainService) Detect(force bool) (Toolchain, error) {
 	if err != nil {
 		return Toolchain{}, fmt.Errorf("detect local toolchain: %w", err)
 	}
-	result := toolchainDTO(detected)
+	result := toolchainDTO(detected, service.paths.DiscoveryWarning())
 	if force {
 		service.emitChanged(result)
 	}
@@ -86,7 +86,7 @@ func (service *ToolchainService) SetPathOverride(path string) error {
 	if err != nil {
 		return fmt.Errorf("rescan tools after PATH change: %w", err)
 	}
-	service.emitChanged(toolchainDTO(detected))
+	service.emitChanged(toolchainDTO(detected, service.paths.DiscoveryWarning()))
 	return nil
 }
 
@@ -96,7 +96,7 @@ func (service *ToolchainService) emitChanged(toolchain Toolchain) {
 	}
 }
 
-func toolchainDTO(source toolchain.Toolchain) Toolchain {
+func toolchainDTO(source toolchain.Toolchain, pathWarning string) Toolchain {
 	names := make([]string, 0, len(source.Tools))
 	for name := range source.Tools {
 		names = append(names, name)
@@ -114,8 +114,9 @@ func toolchainDTO(source toolchain.Toolchain) Toolchain {
 		})
 	}
 	return Toolchain{
-		Path:       source.Path,
-		DetectedAt: source.DetectedAt,
-		Tools:      tools,
+		Path:        source.Path,
+		DetectedAt:  source.DetectedAt,
+		Tools:       tools,
+		PathWarning: pathWarning,
 	}
 }

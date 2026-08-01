@@ -18,6 +18,9 @@
 	let redirectTimer: number | undefined;
 	let recoveringLogs: Promise<void> | null = null;
 	let finalising: Promise<void> | null = null;
+	let statusPoll: ReturnType<typeof setInterval> | undefined;
+
+	const STATUS_POLL_INTERVAL_MS = 2500;
 
 	const terminal = $derived(
 		$jobRuntime.done !== null ||
@@ -48,10 +51,13 @@
 		};
 	}
 
-	function recoverRetainedLogs(jobId: string): Promise<void> {
+	function recoverRetainedLogs(
+		jobId: string,
+		fromSeq = jobRuntime.nextExpectedSequence
+	): Promise<void> {
 		if (recoveringLogs) return recoveringLogs;
 		const operation = (async () => {
-			const lines = await api.scaffold.logs(jobId, 0);
+			const lines = await api.scaffold.logs(jobId, fromSeq);
 			jobRuntime.replay(jobId, lines);
 		})();
 		recoveringLogs = operation;
@@ -94,6 +100,39 @@
 		})();
 		return finalising;
 	}
+
+	function stopStatusPoll() {
+		if (statusPoll === undefined) return;
+		clearInterval(statusPoll);
+		statusPoll = undefined;
+	}
+
+	// Terminal state normally arrives on nodesmith:job:done. That delivery is
+	// best-effort — the backend drops events under queue pressure and the
+	// bridge is not transactional — so the console polls as well. Without this
+	// a single dropped event strands the page on "Creating your project" with
+	// no way forward.
+	function startStatusPoll(jobId: string) {
+		if (statusPoll !== undefined) return;
+		statusPoll = setInterval(() => {
+			void (async () => {
+				try {
+					const job = await refreshStatus(jobId);
+					const done = doneFromJob(job);
+					if (done && !$jobRuntime.done) await complete(done);
+				} catch {
+					// A transient status failure is not worth surfacing while
+					// the run is live. The next tick retries.
+				}
+			})();
+		}, STATUS_POLL_INTERVAL_MS);
+	}
+
+	$effect(() => {
+		if (!terminal) return;
+		stopStatusPoll();
+		cancelling = false;
+	});
 
 	async function refreshStatus(jobId: string): Promise<Job> {
 		currentJob = await api.scaffold.status(jobId);
@@ -169,9 +208,11 @@
 			error = toErrorMessage(caught);
 		}
 		void hydrate(jobId);
+		startStatusPoll(jobId);
 
 		return () => {
 			for (const unsubscribe of unsubscribers) unsubscribe();
+			stopStatusPoll();
 			if (redirectTimer) window.clearTimeout(redirectTimer);
 		};
 	});
@@ -302,11 +343,31 @@
 			</Button>
 		</header>
 		<div class="h-[min(48vh,34rem)] min-h-80">
-			<VirtualLogList
-				lines={$jobRuntime.lines}
-				{autoscroll}
-				onAutoscrollChange={(enabled) => (autoscroll = enabled)}
-			/>
+			<!--
+				The console renders untrusted generator output. A boundary keeps a
+				rendering failure here from taking down the run page, which is the one
+				page that must keep reporting job state and offering Cancel.
+			-->
+			<svelte:boundary>
+				<VirtualLogList
+					lines={$jobRuntime.lines}
+					{autoscroll}
+					onAutoscrollChange={(enabled) => (autoscroll = enabled)}
+				/>
+				{#snippet failed(error, reset)}
+					<div
+						class="flex h-full flex-col items-center justify-center gap-3 rounded-control border border-line bg-canvas/65 px-6 text-center"
+						role="alert"
+					>
+						<p class="text-sm text-ink-muted">
+							The output console stopped rendering. The run itself is unaffected and the full log is
+							still retained.
+						</p>
+						<p class="font-mono text-xs break-words text-ink-faint">{toErrorMessage(error)}</p>
+						<Button variant="secondary" size="sm" onclick={reset}>Retry console</Button>
+					</div>
+				{/snippet}
+			</svelte:boundary>
 		</div>
 	</section>
 
@@ -330,7 +391,7 @@
 				</Button>
 			{:else}
 				<Button variant="danger" onclick={cancelJob} loading={cancelling}>
-					<Icon name="stop" class="size-4" />
+					{#snippet icon()}<Icon name="stop" class="size-4" />{/snippet}
 					{cancelling ? 'Cancelling' : 'Cancel run'}
 				</Button>
 			{/if}

@@ -91,7 +91,8 @@
 					aria-label="Copy project path"
 					loading={busyAction === 'copy-path'}
 				>
-					<Icon name="copy" class="size-3.5" />
+					{#snippet icon()}<Icon name="copy" class="size-3.5" />{/snippet}
+					<span class="sr-only">Copy project path</span>
 				</Button>
 			</div>
 		</div>
@@ -100,11 +101,11 @@
 	<div class="flex flex-wrap gap-2 border-t border-line bg-panel/55 px-6 py-4 sm:px-8">
 		{#if succeeded}
 			<Button onclick={onOpenEditor} loading={busyAction === 'editor'}>
-				<Icon name="external" class="size-4" />
+				{#snippet icon()}<Icon name="external" class="size-4" />{/snippet}
 				Open in {editorLabel}
 			</Button>
 			<Button variant="secondary" onclick={onReveal} loading={busyAction === 'reveal'}>
-				<Icon name="folder" class="size-4" />
+				{#snippet icon()}<Icon name="folder" class="size-4" />{/snippet}
 				Reveal in files
 			</Button>
 		{:else}
@@ -113,7 +114,7 @@
 				Retry with same answers
 			</Button>
 			<Button variant="secondary" onclick={onCopyLog} loading={busyAction === 'copy-log'}>
-				<Icon name="copy" class="size-4" />
+				{#snippet icon()}<Icon name="copy" class="size-4" />{/snippet}
 				Copy full log
 			</Button>
 		{/if}

@@ -284,6 +284,14 @@ const store = {
 			() => StoreBindings.ListHistory(limit),
 			(value) => parseArray(value, 'StoreService.ListHistory', parseHistoryEntry)
 		),
+	deleteHistoryEntry: (id: string) =>
+		call(
+			'StoreService',
+			'DeleteHistoryEntry',
+			'Delete project from history',
+			() => StoreBindings.DeleteHistoryEntry(id),
+			(value) => parseVoid(value, 'StoreService.DeleteHistoryEntry')
+		),
 	clearHistory: () =>
 		call(
 			'StoreService',

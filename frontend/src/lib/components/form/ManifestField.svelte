@@ -73,15 +73,17 @@
 							onchange={(event) => toggleOption(option.value, event.currentTarget.checked)}
 						/>
 						<span
-							class="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-[0.3rem] border border-line-strong bg-canvas text-transparent transition-colors peer-checked:border-brand peer-checked:bg-brand peer-checked:text-white"
+							class="checkbox-box mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-[0.3rem] border border-line-strong bg-canvas text-white peer-checked:border-brand peer-checked:bg-brand"
 							aria-hidden="true"
 						>
 							<svg
 								viewBox="0 0 16 16"
-								class="size-3"
+								class="checkbox-tick size-3"
 								fill="none"
 								stroke="currentColor"
 								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
 							>
 								<path d="m3.5 8.5 2.7 2.7 6.3-6.4"></path>
 							</svg>
@@ -93,12 +95,18 @@
 		{/snippet}
 	</Field>
 {:else if field.type === 'number'}
+	<!--
+		Declared bounds become native input attributes so the browser's own
+		stepper and validation agree with what the planner will accept.
+	-->
 	<Field label={field.label} help={field.help} {error}>
 		{#snippet children(context)}
 			<input
 				id={context.controlId}
 				type="number"
 				value={numberValue()}
+				min={field.min ?? undefined}
+				max={field.max ?? undefined}
 				aria-invalid={context.invalid || undefined}
 				aria-describedby={context.describedBy}
 				class="h-10 w-full rounded-control border border-line-strong bg-panel-raised px-3.5 text-sm font-medium text-ink shadow-sm transition-[border-color,box-shadow] outline-none hover:border-ink-faint/70 focus:border-brand focus:ring-3 focus:ring-brand/20"
@@ -117,8 +125,45 @@
 				placeholder={`Enter ${field.label.toLowerCase()}`}
 				required
 				aria-required="true"
+				minlength={field.minLength ?? undefined}
+				maxlength={field.maxLength ?? undefined}
+				pattern={field.pattern || undefined}
 				oninput={(event) => onChange(event.currentTarget.value)}
 			/>
 		{/snippet}
 	</Field>
 {/if}
+
+<style>
+	/* Mirrors MultiSelect: the tick draws on rather than appearing instantly. */
+	.checkbox-box {
+		transition:
+			background-color 180ms var(--ns-ease-out),
+			border-color 180ms var(--ns-ease-out),
+			transform 180ms var(--ns-ease-out);
+	}
+
+	.checkbox-tick path {
+		stroke-dasharray: 16;
+		stroke-dashoffset: 16;
+		transition: stroke-dashoffset 200ms var(--ns-ease-out) 40ms;
+	}
+
+	input:checked ~ .checkbox-box .checkbox-tick path {
+		stroke-dashoffset: 0;
+	}
+
+	input:checked ~ .checkbox-box {
+		transform: scale(1.06);
+	}
+
+	input:active ~ .checkbox-box {
+		transform: scale(0.92);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.checkbox-tick path {
+			transition: none;
+		}
+	}
+</style>

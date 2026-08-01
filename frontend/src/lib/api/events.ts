@@ -5,6 +5,7 @@ import {
 	parseJobStartedEvent,
 	parseJobStepEvent,
 	parseRecipesReloadedEvent,
+	parseSettings,
 	parseToolchain
 } from './parse';
 import type { NodesmithEventMap, NodesmithEventName } from './types';
@@ -26,7 +27,8 @@ const parsers: EventParserMap = {
 	'nodesmith:job:log': parseJobLogEvent,
 	'nodesmith:job:done': parseJobDoneEvent,
 	'nodesmith:toolchain:changed': parseToolchain,
-	'nodesmith:recipes:reloaded': parseRecipesReloadedEvent
+	'nodesmith:recipes:reloaded': parseRecipesReloadedEvent,
+	'nodesmith:settings:changed': parseSettings
 };
 
 function ensureEventRuntime(action: string): void {
@@ -86,5 +88,8 @@ export const eventApi = {
 	) => onNodesmithEvent('nodesmith:toolchain:changed', listener),
 	onRecipesReloaded: (
 		listener: (payload: NodesmithEventMap['nodesmith:recipes:reloaded']) => void
-	) => onNodesmithEvent('nodesmith:recipes:reloaded', listener)
+	) => onNodesmithEvent('nodesmith:recipes:reloaded', listener),
+	onSettingsChanged: (
+		listener: (payload: NodesmithEventMap['nodesmith:settings:changed']) => void
+	) => onNodesmithEvent('nodesmith:settings:changed', listener)
 } as const;

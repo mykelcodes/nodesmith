@@ -41,11 +41,49 @@ jobs:
           go-version-file: go.mod
           cache-dependency-path: go.sum
 
+      - name: Check Go formatting
+        shell: bash
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "These files are not gofmt-formatted. Run 'task go:format':"
+            echo "$unformatted"
+            exit 1
+          fi
+
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
           version: v2.11.4
           args: ./...
+
+  govulncheck:
+    name: Go vulnerability scan
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Install Linux desktop build dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            build-essential \
+            libgtk-3-dev \
+            libwebkit2gtk-4.0-dev \
+            pkg-config
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Scan module graph for known vulnerabilities
+        shell: bash
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
 
   test-and-build:
     name: Test and build (${{ matrix.label }})
@@ -134,10 +172,18 @@ jobs:
 
       - name: Test Go packages
         shell: bash
-        run: go test ./... -count=1
+        run: go test ./... -count=1 -coverprofile=coverage.out
 
+      - name: Report Go coverage
+        shell: bash
+        run: |
+          go tool cover -func=coverage.out | tail -n 40
+          go tool cover -func=coverage.out | tail -n 1 >> "$GITHUB_STEP_SUMMARY"
+
+      # Runs on every platform: the Windows-specific concurrency paths
+      # (taskkill termination, CREATE_NEW_PROCESS_GROUP, case-insensitive env
+      # merging) are exactly the ones a Linux-only race build never exercises.
       - name: Run Go race tests
-        if: runner.os == 'Linux'
         shell: bash
         run: go test ./... -race -count=1
 
@@ -225,6 +271,7 @@ jobs:
     if: github.ref_type == 'tag'
     needs:
       - go-lint
+      - govulncheck
       - test-and-build
     runs-on: ubuntu-22.04
     timeout-minutes: 10

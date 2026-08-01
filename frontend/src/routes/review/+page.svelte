@@ -190,7 +190,7 @@
 		<div class="flex shrink-0 items-center justify-end gap-2">
 			<Button variant="ghost" onclick={() => goto(resolve('/configure'))}>Back</Button>
 			<Button onclick={startJob} loading={starting}>
-				<Icon name="play" class="size-4" />
+				{#snippet icon()}<Icon name="play" class="size-4" />{/snippet}
 				Run {plan.steps.length}
 				{plan.steps.length === 1 ? 'step' : 'steps'}
 			</Button>

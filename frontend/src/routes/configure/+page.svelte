@@ -191,6 +191,25 @@
 
 	onMount(() => {
 		void initialise();
+
+		// The default parent directory is a setting, so it has to follow the
+		// setting rather than only be read once when this page mounts. Without
+		// this an open wizard keeps offering the previous directory until it is
+		// remounted.
+		try {
+			return api.events.onSettingsChanged((settings) => {
+				globalMinimumReleaseAge = settings.minimumReleaseAge;
+				if (!request || request.parentDir === settings.defaultParentDir) return;
+				request = { ...request, parentDir: settings.defaultParentDir };
+				wizard.syncDefaultParentDir(settings.defaultParentDir);
+				delete errors.parentDir;
+				errors = { ...errors };
+			});
+		} catch {
+			// Outside the desktop runtime there is no event bridge to follow.
+			// The value read during initialise() remains correct.
+			return;
+		}
 	});
 </script>
 
@@ -306,7 +325,7 @@
 						loading={savingPreset}
 						disabled={!request.projectName}
 					>
-						<Icon name="bookmark" class="size-4" />
+						{#snippet icon()}<Icon name="bookmark" class="size-4" />{/snippet}
 						Save
 					</Button>
 				</div>

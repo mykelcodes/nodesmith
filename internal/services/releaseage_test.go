@@ -133,9 +133,9 @@ func TestSaveSettingsRejectsOutOfRangeCooldowns(t *testing.T) {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			service, err := NewStoreService(t.TempDir(), t.TempDir())
+			service, err := NewStoreService(nil, t.TempDir(), t.TempDir())
 			if err != nil {
-				t.Fatalf("NewStoreService() error = %v", err)
+				t.Fatalf("NewStoreService(nil, ) error = %v", err)
 			}
 			settings, err := service.GetSettings()
 			if err != nil {
@@ -153,9 +153,9 @@ func TestSaveSettingsRejectsOutOfRangeCooldowns(t *testing.T) {
 func TestPresetRejectsOutOfRangeCooldown(t *testing.T) {
 	t.Parallel()
 
-	service, err := NewStoreService(t.TempDir(), t.TempDir())
+	service, err := NewStoreService(nil, t.TempDir(), t.TempDir())
 	if err != nil {
-		t.Fatalf("NewStoreService() error = %v", err)
+		t.Fatalf("NewStoreService(nil, ) error = %v", err)
 	}
 	err = service.SavePreset(Preset{
 		Name: "Invalid cooldown",
@@ -261,9 +261,9 @@ func TestStartRejectsAPlanReviewedBeforeTheCooldownChanged(t *testing.T) {
 func TestSaveSettingsRoundTripsTheGlobalCooldownAndClearsLegacyOverrides(t *testing.T) {
 	t.Parallel()
 
-	service, err := NewStoreService(t.TempDir(), t.TempDir())
+	service, err := NewStoreService(nil, t.TempDir(), t.TempDir())
 	if err != nil {
-		t.Fatalf("NewStoreService() error = %v", err)
+		t.Fatalf("NewStoreService(nil, ) error = %v", err)
 	}
 	settings, err := service.GetSettings()
 	if err != nil {

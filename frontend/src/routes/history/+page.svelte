@@ -123,6 +123,21 @@
 		}
 	}
 
+	async function removeEntry(entry: HistoryEntry) {
+		busyId = entry.id;
+		error = '';
+		notice = '';
+		try {
+			await api.store.deleteHistoryEntry(entry.id);
+			entries = entries.filter((candidate) => candidate.id !== entry.id);
+			notice = `Removed ${entry.projectName} from history.`;
+		} catch (caught) {
+			error = toErrorMessage(caught);
+		} finally {
+			busyId = '';
+		}
+	}
+
 	async function clearHistory() {
 		clearing = true;
 		error = '';
@@ -165,7 +180,7 @@
 	</div>
 	{#if entries.length > 0}
 		<Button variant="danger" onclick={clearHistory} loading={clearing}>
-			<Icon name="x" class="size-4" />
+			{#snippet icon()}<Icon name="x" class="size-4" />{/snippet}
 			Clear history
 		</Button>
 	{/if}
@@ -272,6 +287,16 @@
 							<Button
 								variant="ghost"
 								size="sm"
+								onclick={() => removeEntry(entry)}
+								disabled={busyId === entry.id}
+								aria-label={`Remove ${entry.projectName} from history`}
+							>
+								<Icon name="x" class="size-3.5" />
+								Remove
+							</Button>
+							<Button
+								variant="ghost"
+								size="sm"
 								onclick={() => reveal(entry)}
 								disabled={busyId === entry.id}
 							>
@@ -284,11 +309,11 @@
 								onclick={() => reopen(entry)}
 								loading={busyId === entry.id}
 							>
-								<Icon name="external" class="size-3.5" />
+								{#snippet icon()}<Icon name="external" class="size-3.5" />{/snippet}
 								Re-open
 							</Button>
 							<Button size="sm" onclick={() => rerun(entry)} loading={busyId === entry.id}>
-								<Icon name="refresh" class="size-3.5" />
+								{#snippet icon()}<Icon name="refresh" class="size-3.5" />{/snippet}
 								Run recipe again
 							</Button>
 						</div>

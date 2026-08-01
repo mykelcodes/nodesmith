@@ -335,6 +335,12 @@ export namespace services {
 	    help: string;
 	    options: RecipeOption[];
 	    visibleIf: string;
+	    required: boolean;
+	    pattern: string;
+	    minLength?: number;
+	    maxLength?: number;
+	    min?: number;
+	    max?: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new RecipeField(source);
@@ -349,6 +355,12 @@ export namespace services {
 	        this.help = source["help"];
 	        this.options = this.convertValues(source["options"], RecipeOption);
 	        this.visibleIf = source["visibleIf"];
+	        this.required = source["required"];
+	        this.pattern = source["pattern"];
+	        this.minLength = source["minLength"];
+	        this.maxLength = source["maxLength"];
+	        this.min = source["min"];
+	        this.max = source["max"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -551,6 +563,7 @@ export namespace services {
 	    // Go type: time
 	    detectedAt: any;
 	    tools: Tool[];
+	    pathWarning: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Toolchain(source);
@@ -561,6 +574,7 @@ export namespace services {
 	        this.path = source["path"];
 	        this.detectedAt = this.convertValues(source["detectedAt"], null);
 	        this.tools = this.convertValues(source["tools"], Tool);
+	        this.pathWarning = source["pathWarning"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

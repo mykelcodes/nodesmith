@@ -4,6 +4,8 @@ import {services} from '../models';
 
 export function ClearHistory():Promise<void>;
 
+export function DeleteHistoryEntry(arg1:string):Promise<void>;
+
 export function DeletePreset(arg1:string):Promise<void>;
 
 export function GetSettings():Promise<services.Settings>;

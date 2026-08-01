@@ -31,43 +31,41 @@ export interface RecipeOption {
 	label: string;
 }
 
+/**
+ * Optional value constraints declared by a recipe field.
+ *
+ * These mirror the backend's `recipe.Field` so the form can reject a bad answer
+ * before the bridge call. The planner enforces the same rules again and stays
+ * authoritative — this is a better error message, not a security boundary.
+ *
+ * `null` means the constraint was not declared.
+ */
+export interface RecipeFieldConstraints {
+	/** Requires an explicit answer instead of falling back to `default`. */
+	required: boolean;
+	/** RE2 source for a text answer. Empty when undeclared. Unanchored. */
+	pattern: string;
+	/** Text length bounds, counted in characters rather than bytes. */
+	minLength: number | null;
+	maxLength: number | null;
+	/** Inclusive bounds for a number answer. */
+	min: number | null;
+	max: number | null;
+}
+
+interface RecipeFieldBase extends RecipeFieldConstraints {
+	id: string;
+	label: string;
+	help: string;
+	options: RecipeOption[];
+	visibleIf: string;
+}
+
 export type RecipeField =
-	| {
-			id: string;
-			label: string;
-			type: 'select' | 'text';
-			default: string;
-			help: string;
-			options: RecipeOption[];
-			visibleIf: string;
-	  }
-	| {
-			id: string;
-			label: string;
-			type: 'multiselect';
-			default: string[];
-			help: string;
-			options: RecipeOption[];
-			visibleIf: string;
-	  }
-	| {
-			id: string;
-			label: string;
-			type: 'boolean';
-			default: boolean;
-			help: string;
-			options: RecipeOption[];
-			visibleIf: string;
-	  }
-	| {
-			id: string;
-			label: string;
-			type: 'number';
-			default: number;
-			help: string;
-			options: RecipeOption[];
-			visibleIf: string;
-	  };
+	| (RecipeFieldBase & { type: 'select' | 'text'; default: string })
+	| (RecipeFieldBase & { type: 'multiselect'; default: string[] })
+	| (RecipeFieldBase & { type: 'boolean'; default: boolean })
+	| (RecipeFieldBase & { type: 'number'; default: number });
 
 export interface ConditionalArg {
 	if: string;
@@ -135,6 +133,12 @@ export interface Toolchain {
 	path: string;
 	detectedAt: string;
 	tools: Tool[];
+	/**
+	 * Set when login-shell PATH discovery failed and Nodesmith fell back to the
+	 * PATH it was started with. This is the usual root cause of every tool
+	 * appearing missing on a Finder-launched macOS app.
+	 */
+	pathWarning: string;
 }
 
 export interface ScaffoldRequest {
@@ -273,6 +277,7 @@ export interface JobDoneEvent {
 export interface RecipesReloadedEvent {
 	count: number;
 	warnings: string[];
+	overrides: string[];
 }
 
 export interface NodesmithEventMap {
@@ -282,6 +287,7 @@ export interface NodesmithEventMap {
 	'nodesmith:job:done': JobDoneEvent;
 	'nodesmith:toolchain:changed': Toolchain;
 	'nodesmith:recipes:reloaded': RecipesReloadedEvent;
+	'nodesmith:settings:changed': Settings;
 }
 
 export type NodesmithEventName = keyof NodesmithEventMap;

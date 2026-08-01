@@ -11,11 +11,11 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"sort"
 	"strings"
 	"sync"
 	"time"
 
+	"nodesmith/internal/environ"
 	"nodesmith/internal/planner"
 )
 
@@ -131,13 +131,29 @@ func (r *logRing) append(line LogLine) {
 	r.start = (r.start + 1) % len(r.buf)
 }
 
+// after returns the retained lines with a sequence number at or above seq.
+//
+// Sequence numbers are assigned monotonically and the ring holds a contiguous
+// run of them, so the first matching offset is arithmetic rather than a scan,
+// and the result is sized to what is actually returned. This is on the log
+// polling path, which the run page hits repeatedly while a job is live.
+//
+// The result is always non-nil: it crosses the Wails bridge as JSON, where a
+// nil slice would arrive as null rather than an empty array.
 func (r *logRing) after(seq int) []LogLine {
-	result := make([]LogLine, 0, r.size)
-	for i := 0; i < r.size; i++ {
-		line := r.buf[(r.start+i)%len(r.buf)]
-		if line.Seq >= seq {
-			result = append(result, line)
-		}
+	if r.size == 0 {
+		return []LogLine{}
+	}
+	offset := seq - r.buf[r.start].Seq
+	if offset < 0 {
+		offset = 0
+	}
+	if offset >= r.size {
+		return []LogLine{}
+	}
+	result := make([]LogLine, 0, r.size-offset)
+	for i := offset; i < r.size; i++ {
+		result = append(result, r.buf[(r.start+i)%len(r.buf)])
 	}
 	return result
 }
@@ -475,7 +491,7 @@ func (m *Manager) runStep(ctx context.Context, jobID string, step planner.PlanSt
 		}
 		overrides["PATH"] = pathValue
 	}
-	command.Env = mergeEnvironment(os.Environ(), overrides)
+	command.Env = environ.Merge(os.Environ(), overrides, runtime.GOOS)
 	configureProcess(command)
 
 	// Deliberately os.Pipe rather than Cmd.StdoutPipe: Cmd.Wait closes pipes it
@@ -729,38 +745,6 @@ func (m *Manager) pruneLocked(now time.Time) {
 			delete(m.jobs, id)
 		}
 	}
-}
-
-func mergeEnvironment(base []string, overrides map[string]string) []string {
-	if len(overrides) == 0 {
-		return base
-	}
-	keys := make([]string, 0, len(overrides))
-	for key := range overrides {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	result := make([]string, 0, len(base)+len(overrides))
-	for _, entry := range base {
-		key, _, ok := strings.Cut(entry, "=")
-		if ok {
-			for overrideKey := range overrides {
-				matches := key == overrideKey
-				if runtime.GOOS == "windows" {
-					matches = strings.EqualFold(key, overrideKey)
-				}
-				if matches {
-					goto nextEntry
-				}
-			}
-		}
-		result = append(result, entry)
-	nextEntry:
-	}
-	for _, key := range keys {
-		result = append(result, key+"="+overrides[key])
-	}
-	return result
 }
 
 func isTerminal(state State) bool {

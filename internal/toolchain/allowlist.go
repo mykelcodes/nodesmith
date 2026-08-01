@@ -2,9 +2,8 @@ package toolchain
 
 import (
 	"errors"
-	"fmt"
-	"sort"
-	"strings"
+
+	"nodesmith/internal/allowlist"
 )
 
 var (
@@ -16,67 +15,20 @@ var (
 	ErrBinaryNotFound = errors.New("binary not found")
 )
 
-var allowedBinaries = map[string]struct{}{
-	"bun":   {},
-	"bunx":  {},
-	"cargo": {},
-	"code":  {},
-	"gh":    {},
-	"git":   {},
-	"go":    {},
-	"node":  {},
-	"npm":   {},
-	"npx":   {},
-	"pnpm":  {},
-	"pnpx":  {},
-	"wails": {},
-	"yarn":  {},
-}
-
-var detectedBinaries = []string{
-	"node",
-	"npm",
-	"npx",
-	"pnpm",
-	"yarn",
-	"bun",
-	"git",
-	"go",
-	"cargo",
-	"wails",
-	"gh",
-	"code",
-}
-
-// AllowedBinaries returns a sorted copy of the executable allowlist.
+// AllowedBinaries returns a sorted copy of the executable allowlist. The list
+// itself is owned by internal/allowlist so that recipe validation and binary
+// resolution cannot drift apart.
 func AllowedBinaries() []string {
-	names := make([]string, 0, len(allowedBinaries))
-	for name := range allowedBinaries {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	return names
+	return allowlist.Names()
 }
 
 // DetectedBinaries returns the stable list of tools included in a toolchain
-// scan. pnpx and bunx are resolvable helpers but are not reported separately.
+// scan.
 func DetectedBinaries() []string {
-	return append([]string(nil), detectedBinaries...)
+	return allowlist.Detected()
 }
 
-// IsAllowed reports whether name is an allowlisted logical binary name. Paths,
-// extensions, and alternate casing are deliberately rejected.
+// IsAllowed reports whether name is an allowlisted logical binary name.
 func IsAllowed(name string) bool {
-	if name != strings.ToLower(name) {
-		return false
-	}
-	_, ok := allowedBinaries[name]
-	return ok
-}
-
-func validateBinaryName(name string) error {
-	if !IsAllowed(name) {
-		return fmt.Errorf("%w: %q", ErrBinaryNotAllowed, name)
-	}
-	return nil
+	return allowlist.IsAllowed(name)
 }

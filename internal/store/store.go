@@ -125,6 +125,39 @@ func (store *Store[T]) load() (T, error) {
 	return document.Data, nil
 }
 
+// LoadOrRecover reads the document, and when the stored copy cannot be used it
+// preserves the original alongside the store and returns the default value.
+//
+// A version mismatch or a corrupt file is otherwise a dead end: nothing in the
+// application can rewrite an unreadable document, so settings, presets, and
+// history would stay permanently unreachable. Moving the file aside keeps the
+// data recoverable by hand while letting the application start.
+//
+// The returned string is the path the unreadable document was preserved at, and
+// is empty when the document loaded normally.
+func (store *Store[T]) LoadOrRecover() (T, string, error) {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
+	value, err := store.load()
+	if err == nil {
+		return value, "", nil
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return value, "", err
+	}
+
+	backupPath := store.path + ".unreadable"
+	if renameErr := os.Rename(store.path, backupPath); renameErr != nil {
+		return value, "", fmt.Errorf("%w (and it could not be preserved: %v)", err, renameErr)
+	}
+	fallback, cloneErr := cloneJSON(store.defaultValue)
+	if cloneErr != nil {
+		return value, backupPath, fmt.Errorf("clone default store value: %w", cloneErr)
+	}
+	return fallback, backupPath, nil
+}
+
 // Save serializes the entire document before touching the filesystem, then
 // writes, syncs, and renames a temporary file in the destination directory.
 func (store *Store[T]) Save(value T) error {

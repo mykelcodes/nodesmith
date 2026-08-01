@@ -6,11 +6,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	"nodesmith/internal/environ"
 	"nodesmith/internal/planner"
 )
 
@@ -558,13 +561,14 @@ func TestManagerExpiresFinishedJobsAfterRetention(t *testing.T) {
 }
 
 func TestMergeEnvironmentReplacesAndSortsOverrides(t *testing.T) {
-	got := mergeEnvironment(
+	got := environ.Merge(
 		[]string{"PATH=/old", "UNCHANGED=yes", "MALFORMED"},
 		map[string]string{"PATH": "/new", "CI": "1"},
+		runtime.GOOS,
 	)
 	want := []string{"UNCHANGED=yes", "MALFORMED", "CI=1", "PATH=/new"}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {
-		t.Fatalf("mergeEnvironment() = %#v, want %#v", got, want)
+		t.Fatalf("environ.Merge() = %#v, want %#v", got, want)
 	}
 }
 
@@ -723,4 +727,72 @@ func waitForTerminal(t *testing.T, manager *Manager, jobID string, timeout time.
 	job, _ := manager.Status(jobID)
 	t.Fatalf("job did not finish within %s; final state %q", timeout, job.State)
 	return Job{}
+}
+
+func TestLogRingAfterReturnsTheContiguousTail(t *testing.T) {
+	t.Parallel()
+
+	seqs := func(lines []LogLine) []int {
+		out := make([]int, 0, len(lines))
+		for _, line := range lines {
+			out = append(out, line.Seq)
+		}
+		return out
+	}
+
+	t.Run("empty ring returns an empty, non-nil slice", func(t *testing.T) {
+		t.Parallel()
+		ring := newLogRing(4)
+		got := ring.after(0)
+		if got == nil {
+			t.Fatal("after() = nil, want an empty slice: nil marshals to null across the bridge")
+		}
+		if len(got) != 0 {
+			t.Fatalf("after() = %v, want empty", seqs(got))
+		}
+	})
+
+	t.Run("unwrapped ring", func(t *testing.T) {
+		t.Parallel()
+		ring := newLogRing(8)
+		for i := range 5 {
+			ring.append(LogLine{Seq: i})
+		}
+		for _, test := range []struct {
+			from int
+			want []int
+		}{
+			{from: 0, want: []int{0, 1, 2, 3, 4}},
+			{from: 3, want: []int{3, 4}},
+			{from: 5, want: []int{}},
+			{from: 99, want: []int{}},
+		} {
+			if got := seqs(ring.after(test.from)); !reflect.DeepEqual(got, test.want) {
+				t.Fatalf("after(%d) = %v, want %v", test.from, got, test.want)
+			}
+		}
+	})
+
+	// Once the ring wraps, the oldest retained sequence is no longer 0, so the
+	// start offset has to be computed against it rather than assumed.
+	t.Run("wrapped ring drops evicted sequences", func(t *testing.T) {
+		t.Parallel()
+		ring := newLogRing(4)
+		for i := range 10 {
+			ring.append(LogLine{Seq: i})
+		}
+		for _, test := range []struct {
+			from int
+			want []int
+		}{
+			{from: 0, want: []int{6, 7, 8, 9}},
+			{from: 6, want: []int{6, 7, 8, 9}},
+			{from: 8, want: []int{8, 9}},
+			{from: 10, want: []int{}},
+		} {
+			if got := seqs(ring.after(test.from)); !reflect.DeepEqual(got, test.want) {
+				t.Fatalf("after(%d) = %v, want %v", test.from, got, test.want)
+			}
+		}
+	})
 }

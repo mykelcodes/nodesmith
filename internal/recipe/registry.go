@@ -56,7 +56,15 @@ func Load(embedded fs.FS, userDir string) (*Registry, LoadReport, error) {
 	}
 	userRecipes, warnings, err := loadOptionalUserDir(userDir)
 	if err != nil {
-		return nil, LoadReport{}, fmt.Errorf("load user recipes: %w", err)
+		// An unreadable override directory must not take the whole catalogue
+		// down with it. The embedded recipes are still valid, so report the
+		// problem and carry on with them.
+		report.Warnings = append(
+			report.Warnings,
+			fmt.Sprintf("%s: %v; user recipes skipped", userDir, err),
+		)
+		sort.Strings(report.Warnings)
+		return registry, report, nil
 	}
 	report.Warnings = append(report.Warnings, warnings...)
 
@@ -89,9 +97,9 @@ func (registry *Registry) Len() int {
 	return len(registry.byID)
 }
 
-func (registry *Registry) List() []Manifest {
+func (registry *Registry) List() ([]Manifest, error) {
 	if registry == nil {
-		return []Manifest{}
+		return []Manifest{}, nil
 	}
 	ids := make([]string, 0, len(registry.byID))
 	for id := range registry.byID {
@@ -101,9 +109,13 @@ func (registry *Registry) List() []Manifest {
 
 	manifests := make([]Manifest, 0, len(ids))
 	for _, id := range ids {
-		manifests = append(manifests, cloneManifest(registry.byID[id]))
+		manifest, err := cloneManifest(registry.byID[id])
+		if err != nil {
+			return nil, err
+		}
+		manifests = append(manifests, manifest)
 	}
-	return manifests
+	return manifests, nil
 }
 
 func (registry *Registry) Get(id string) (Manifest, error) {
@@ -114,7 +126,7 @@ func (registry *Registry) Get(id string) (Manifest, error) {
 	if !exists {
 		return Manifest{}, fmt.Errorf("recipe %q not found", id)
 	}
-	return cloneManifest(manifest), nil
+	return cloneManifest(manifest)
 }
 
 type loadedManifest struct {
@@ -184,14 +196,18 @@ func loadOptionalUserDir(directory string) ([]loadedManifest, []string, error) {
 	return loaded, warnings, nil
 }
 
-func cloneManifest(manifest Manifest) Manifest {
+// cloneManifest returns a deep copy. It must never fall back to returning its
+// argument: the registry hands these out to callers, and the returned value
+// shares every slice and map with the stored manifest, so an aliased result
+// would let one caller corrupt the registry for all later ones.
+func cloneManifest(manifest Manifest) (Manifest, error) {
 	data, err := json.Marshal(manifest)
 	if err != nil {
-		return manifest
+		return Manifest{}, fmt.Errorf("encode recipe %q: %w", manifest.ID, err)
 	}
 	clone, err := DecodeBytes(data)
 	if err != nil {
-		return manifest
+		return Manifest{}, fmt.Errorf("decode recipe %q: %w", manifest.ID, err)
 	}
-	return clone
+	return clone, nil
 }

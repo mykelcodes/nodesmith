@@ -1,43 +1,64 @@
 @import 'tailwindcss';
 @import '../lib/theme/tokens.css';
 
-html {
-	min-width: 20rem;
-	background: var(--ns-canvas);
-	font-family: var(--ns-font-sans);
-}
+/*
+ * Element defaults live in @layer base so Tailwind utilities can override them.
+ *
+ * Unlayered CSS beats every layered rule regardless of specificity, so while
+ * these lived outside a layer the focus rule below silently defeated every
+ * `focus-visible:outline-none` utility in the app — a rounded link still drew a
+ * square outline, and no class could turn it off.
+ */
+@layer base {
+	html {
+		min-width: 20rem;
+		background: var(--ns-canvas);
+		font-family: var(--ns-font-sans);
+	}
 
-body {
-	margin: 0;
-	min-width: 20rem;
-	min-height: 100vh;
-	overflow: hidden;
-	background: var(--ns-canvas);
-	color: var(--ns-ink);
-	text-rendering: optimizeLegibility;
-	-webkit-font-smoothing: antialiased;
-}
+	body {
+		margin: 0;
+		min-width: 20rem;
+		min-height: 100vh;
+		overflow: hidden;
+		background: var(--ns-canvas);
+		color: var(--ns-ink);
+		text-rendering: optimizeLegibility;
+		-webkit-font-smoothing: antialiased;
+	}
 
-button,
-input,
-select,
-textarea {
-	font: inherit;
-}
+	button,
+	input,
+	select,
+	textarea {
+		font: inherit;
+	}
 
-button,
-a {
-	-webkit-tap-highlight-color: transparent;
-}
+	button,
+	a {
+		-webkit-tap-highlight-color: transparent;
+	}
 
-:focus-visible {
-	outline: 2px solid var(--ns-brand);
-	outline-offset: 3px;
-}
+	/*
+	 * The default focus indicator is a box-shadow ring rather than an outline.
+	 * A ring always follows border-radius; `outline` only does so in newer
+	 * engines, and Nodesmith ships on the system web view, so on older WebKit an
+	 * outline renders square around otherwise rounded controls.
+	 *
+	 * Components that draw their own ring override this with a utility, which
+	 * now works because this rule is layered.
+	 */
+	:focus-visible {
+		outline: none;
+		box-shadow:
+			0 0 0 2px var(--ns-canvas),
+			0 0 0 4px var(--ns-brand);
+	}
 
-:where(button, input, select, textarea):focus-visible {
-	/* Form controls draw their rounded focus indicator with a ring. */
-	outline: none;
+	:where(button, input, select, textarea):focus-visible {
+		/* Form controls draw their own rounded ring at the wrapper level. */
+		box-shadow: none;
+	}
 }
 
 ::selection {

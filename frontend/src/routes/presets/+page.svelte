@@ -201,7 +201,8 @@
 						Delete
 					</Button>
 					<Button size="sm" onclick={() => usePreset(preset)} loading={busyId === preset.id}>
-						Use preset <Icon name="arrowRight" class="size-3.5" />
+						Use preset
+						{#if busyId !== preset.id}<Icon name="arrowRight" class="size-3.5" />{/if}
 					</Button>
 				</div>
 			</article>

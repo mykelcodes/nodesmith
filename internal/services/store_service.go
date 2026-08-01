@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"fmt"
+	"log"
 	"path/filepath"
 	"slices"
 	"sort"
@@ -11,9 +12,16 @@ import (
 
 	"nodesmith/internal/project"
 	jsonstore "nodesmith/internal/store"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 const storeSchemaVersion = 1
+
+// maxHistoryEntries caps retained project history. Starting a job and finishing
+// one each rewrite this file in full, so unbounded growth costs time on the
+// critical path of creating a project rather than just disk space.
+const maxHistoryEntries = 500
 
 // StoreService persists settings, presets, and project history as atomic JSON.
 type StoreService struct {
@@ -21,10 +29,21 @@ type StoreService struct {
 	presets  *jsonstore.Store[[]Preset]
 	history  *jsonstore.Store[[]HistoryEntry]
 	now      func() time.Time
+
+	// bridge is optional so the store can be constructed and tested without a
+	// desktop runtime. When nil, settings changes simply are not announced.
+	//
+	// It is deliberately not settable through an exported method: Wails binds
+	// every exported method on a bound struct, and wiring is not frontend API.
+	bridge *BridgeContext
 }
 
 // NewStoreService constructs the three local JSON stores.
-func NewStoreService(configDir string, defaultParentDir string) (*StoreService, error) {
+func NewStoreService(
+	bridge *BridgeContext,
+	configDir string,
+	defaultParentDir string,
+) (*StoreService, error) {
 	if strings.TrimSpace(configDir) == "" {
 		return nil, errors.New("configure local storage: config directory is empty")
 	}
@@ -62,16 +81,33 @@ func NewStoreService(configDir string, defaultParentDir string) (*StoreService, 
 		presets:  presets,
 		history:  history,
 		now:      time.Now,
+		bridge:   bridge,
 	}, nil
 }
 
 // GetSettings returns local preferences or their first-run defaults.
 func (service *StoreService) GetSettings() (Settings, error) {
-	settings, err := service.settings.Load()
+	settings, recovered, err := service.settings.LoadOrRecover()
 	if err != nil {
 		return Settings{}, fmt.Errorf("load settings: %w", err)
 	}
+	noteRecoveredStore("settings", recovered)
 	return settings, nil
+}
+
+// noteRecoveredStore records that an unreadable document was moved aside. The
+// preserved file is the durable signal — it sits beside the store, named for
+// what it replaced — so nothing here is load-bearing beyond a log line.
+func noteRecoveredStore(name string, recovered string) {
+	if recovered == "" {
+		return
+	}
+	log.Printf(
+		"Nodesmith could not read local %s and started from defaults; "+
+			"the previous file was preserved at %s",
+		name,
+		recovered,
+	)
 }
 
 // SaveSettings atomically replaces local preferences.
@@ -96,15 +132,24 @@ func (service *StoreService) SaveSettings(settings Settings) error {
 	if err := service.settings.Save(settings); err != nil {
 		return fmt.Errorf("save settings: %w", err)
 	}
+	// Announce the new settings so open views can follow them without being
+	// remounted. The configure step's parent directory tracks the default, and
+	// re-reading it only on mount left it stale for an already-open wizard.
+	if service.bridge != nil {
+		if ctx, ready := service.bridge.ready(); ready {
+			runtime.EventsEmit(ctx, "nodesmith:settings:changed", settings)
+		}
+	}
 	return nil
 }
 
 // ListPresets returns presets ordered by most-recent update, then name.
 func (service *StoreService) ListPresets() ([]Preset, error) {
-	presets, err := service.presets.Load()
+	presets, recovered, err := service.presets.LoadOrRecover()
 	if err != nil {
 		return nil, fmt.Errorf("load presets: %w", err)
 	}
+	noteRecoveredStore("presets", recovered)
 	sort.SliceStable(presets, func(left, right int) bool {
 		if presets[left].UpdatedAt.Equal(presets[right].UpdatedAt) {
 			return strings.ToLower(presets[left].Name) < strings.ToLower(presets[right].Name)
@@ -184,10 +229,11 @@ func (service *StoreService) DeletePreset(id string) error {
 
 // ListHistory returns newest entries first. A non-positive limit returns all.
 func (service *StoreService) ListHistory(limit int) ([]HistoryEntry, error) {
-	history, err := service.history.Load()
+	history, recovered, err := service.history.LoadOrRecover()
 	if err != nil {
 		return nil, fmt.Errorf("load history: %w", err)
 	}
+	noteRecoveredStore("project history", recovered)
 	sort.SliceStable(history, func(left, right int) bool {
 		return history[left].CreatedAt.After(history[right].CreatedAt)
 	})
@@ -220,9 +266,49 @@ func (service *StoreService) recordHistory(entry HistoryEntry) error {
 			}
 		}
 		*history = append(*history, entry)
+		trimHistory(history)
 		return nil
 	}); err != nil {
 		return fmt.Errorf("record history: %w", err)
+	}
+	return nil
+}
+
+// trimHistory keeps the newest entries and drops the rest. It reorders the
+// stored slice newest-first; ListHistory sorts on read, so callers are
+// unaffected.
+func trimHistory(history *[]HistoryEntry) {
+	entries := *history
+	if len(entries) <= maxHistoryEntries {
+		return
+	}
+	sort.SliceStable(entries, func(left, right int) bool {
+		return entries[left].CreatedAt.After(entries[right].CreatedAt)
+	})
+	*history = entries[:maxHistoryEntries]
+}
+
+// DeleteHistoryEntry removes a single project from the history.
+func (service *StoreService) DeleteHistoryEntry(id string) error {
+	if strings.TrimSpace(id) == "" {
+		return errors.New("delete history entry: id is required")
+	}
+	found := false
+	if err := service.history.Update(func(history *[]HistoryEntry) error {
+		for index := range *history {
+			if (*history)[index].ID != id {
+				continue
+			}
+			*history = slices.Delete(*history, index, index+1)
+			found = true
+			break
+		}
+		return nil
+	}); err != nil {
+		return fmt.Errorf("delete history entry: %w", err)
+	}
+	if !found {
+		return fmt.Errorf("delete history entry: entry %q was not found", id)
 	}
 	return nil
 }
