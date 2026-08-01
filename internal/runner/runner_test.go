@@ -66,8 +66,14 @@ func TestRunnerHelper(t *testing.T) {
 			"-test.run=TestRunnerHelper",
 			"--",
 			"hold-output",
+			args[1],
+			args[2],
 		)
 		child.Env = os.Environ()
+		// A process's current directory cannot be removed on Windows. Keep the
+		// deliberately surviving grandchild out of the test's temporary working
+		// directory so testing.TempDir can always clean it up.
+		child.Dir = os.TempDir()
 		child.Stdout = os.Stdout
 		child.Stderr = os.Stderr
 		if err := child.Start(); err != nil {
@@ -75,7 +81,20 @@ func TestRunnerHelper(t *testing.T) {
 		}
 		_, _ = fmt.Fprintln(os.Stdout, "parent-done")
 	case "hold-output":
-		time.Sleep(8 * time.Second)
+		deadline := time.Now().Add(8 * time.Second)
+		for time.Now().Before(deadline) {
+			if _, err := os.Stat(args[1]); err == nil {
+				break
+			} else if !os.IsNotExist(err) {
+				os.Exit(8)
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		_ = os.Stdout.Close()
+		_ = os.Stderr.Close()
+		if err := os.WriteFile(args[2], []byte("stopped"), 0o600); err != nil {
+			os.Exit(9)
+		}
 	case "delayed-marker":
 		time.Sleep(2 * time.Second)
 		if err := os.WriteFile(args[1], []byte("orphan survived"), 0o600); err != nil {
@@ -259,14 +278,26 @@ func TestManagerCancellationTerminatesChildProcessTree(t *testing.T) {
 }
 
 func TestManagerStopsWaitingOnOutputHeldByOrphanedGrandchild(t *testing.T) {
+	tempDir := t.TempDir()
+	release := filepath.Join(tempDir, "release-grandchild")
+	stopped := filepath.Join(tempDir, "grandchild-stopped")
+	t.Cleanup(func() {
+		// Do not leave the helper running if an earlier assertion fails.
+		_ = os.WriteFile(release, []byte("release"), 0o600)
+	})
+
 	manager := NewManager()
-	job, err := manager.Start(helperPlan(t, "orphan-output"))
+	job, err := manager.Start(helperPlan(t, "orphan-output", release, stopped))
 	if err != nil {
 		t.Fatal(err)
 	}
 	start := time.Now()
 	final := waitForTerminal(t, manager, job.ID, 6*time.Second)
 	elapsed := time.Since(start)
+	if err := os.WriteFile(release, []byte("release"), 0o600); err != nil {
+		t.Fatalf("release grandchild: %v", err)
+	}
+	waitForFile(t, stopped, 2*time.Second)
 	if final.State != StateSuccess {
 		t.Fatalf("State = %q, want success (error: %s)", final.State, final.Error)
 	}

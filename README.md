@@ -42,7 +42,7 @@ the [recipe authoring guide](docs/recipes.md) for the schema and safety rules.
 
 ## Stack
 
-- Go 1.25+
+- Go 1.25.12+
 - Wails v2.13.0
 - Svelte 5 and TypeScript
 - Tailwind CSS v4

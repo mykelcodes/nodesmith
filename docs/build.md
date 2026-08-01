@@ -5,7 +5,7 @@ commands below intentionally pin the CLI to the same release as `go.mod`.
 
 ## Prerequisites
 
-- Go 1.25 or newer.
+- Go 1.25.12 or newer.
 - Node.js 24 and pnpm 11.6.0. Node 22.12 or newer also satisfies the frontend toolchain.
 - [go-task](https://taskfile.dev/) for the convenience commands in `Taskfile.yml` (optional).
 - The native dependencies for your platform, described below.
