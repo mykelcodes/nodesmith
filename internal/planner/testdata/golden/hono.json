@@ -23,6 +23,36 @@
       "display": "/tools/npx --yes create-hono@latest hono-app --template nodejs --pm pnpm --install"
     },
     {
+      "id": "configure-project",
+      "kind": "project-setup",
+      "label": "Configure project tooling",
+      "bin": "",
+      "args": [],
+      "dir": "hono-app",
+      "env": {},
+      "display": "Configure eslint + prettier",
+      "setup": {
+        "recipeId": "hono",
+        "template": "nodejs",
+        "linting": "eslint",
+        "formatting": "prettier"
+      }
+    },
+    {
+      "id": "install-tooling",
+      "label": "Install configured tooling",
+      "bin": "/tools/pnpm",
+      "args": [
+        "install",
+        "--config.strict-dep-builds=false"
+      ],
+      "dir": "hono-app",
+      "env": {
+        "CI": "true"
+      },
+      "display": "/tools/pnpm install --config.strict-dep-builds=false"
+    },
+    {
       "id": "git-init",
       "label": "Initialise repository",
       "bin": "/tools/git",
@@ -65,6 +95,8 @@
       "display": "/tools/git commit -m 'Initial commit'"
     }
   ],
-  "warnings": [],
-  "hash": "ee9097c5627bcf99e9632a312d7e27b9bd22b0f5a86b580056070f66ac4259fd"
+  "warnings": [
+    "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
+  ],
+  "hash": "d29b83bf29f0238b9823f7ac6f1047049c535b35e7c8ecd3712ba5861dea4346"
 }

@@ -152,7 +152,7 @@ type Plan struct {
 	Hash       string     `json:"hash"`
 }
 
-// PlanStep is one resolved process invocation.
+// PlanStep is one resolved command or structured project operation.
 type PlanStep struct {
 	ID      string            `json:"id"`
 	Kind    string            `json:"kind"`
@@ -163,6 +163,7 @@ type PlanStep struct {
 	Env     map[string]string `json:"env"`
 	Display string            `json:"display"`
 	Config  *ProjectConfig    `json:"config"`
+	Setup   *ProjectSetup     `json:"setup"`
 }
 
 // ProjectConfig is a reviewable structured edit to a package-manager file.
@@ -172,6 +173,15 @@ type ProjectConfig struct {
 	Section string `json:"section"`
 	Key     string `json:"key"`
 	Value   string `json:"value"`
+}
+
+// ProjectSetup is a reviewable shared tooling configuration.
+type ProjectSetup struct {
+	RecipeID   string `json:"recipeId"`
+	Template   string `json:"template"`
+	Linting    string `json:"linting"`
+	Formatting string `json:"formatting"`
+	Styling    string `json:"styling"`
 }
 
 // Job is a stable scaffold-job snapshot.

@@ -460,6 +460,13 @@ func (m *Manager) execute(ctx context.Context, jobID string) {
 }
 
 func (m *Manager) runStep(ctx context.Context, jobID string, step planner.PlanStep) (int, error) {
+	if step.Kind == planner.StepKindProjectSetup || step.Setup != nil {
+		if err := writeProjectSetup(step); err != nil {
+			return -1, err
+		}
+		m.appendLog(jobID, step.ID, "stdout", step.Display)
+		return 0, nil
+	}
 	if step.Kind == planner.StepKindProjectConfig || step.Config != nil {
 		if err := writeProjectConfig(step); err != nil {
 			return -1, err

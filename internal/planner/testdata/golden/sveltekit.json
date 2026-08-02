@@ -26,6 +26,22 @@
       "display": "/tools/npx --yes sv@latest create sveltekit-app --template minimal --types ts --no-add-ons --no-install --no-download-check"
     },
     {
+      "id": "configure-project",
+      "kind": "project-setup",
+      "label": "Configure project tooling",
+      "bin": "",
+      "args": [],
+      "dir": "sveltekit-app",
+      "env": {},
+      "display": "Configure eslint + prettier",
+      "setup": {
+        "recipeId": "sveltekit",
+        "template": "minimal",
+        "linting": "eslint",
+        "formatting": "prettier"
+      }
+    },
+    {
       "id": "install",
       "label": "Install dependencies",
       "bin": "/tools/pnpm",
@@ -85,5 +101,5 @@
   "warnings": [
     "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
   ],
-  "hash": "e08bdce35d4f952097064bd57f3bc2eb4a7914076c9d3177c89f594d21618e19"
+  "hash": "7a8a6988c8d2cd0b86c8218076e271dbf00d01793fbee523b94f775d8000204b"
 }

@@ -147,6 +147,44 @@ func Resolve(manifest recipe.Manifest, request ScaffoldRequest, resolver BinaryR
 		plan.Steps = append(plan.Steps, planStep)
 	}
 
+	if manifest.Setup.NodeTooling || manifest.Setup.ExpoStyling {
+		setup := &ProjectSetup{RecipeID: manifest.ID}
+		if template, ok := values["template"].(string); ok {
+			setup.Template = template
+		}
+		parts := make([]string, 0, 3)
+		if manifest.Setup.NodeTooling {
+			linting, exists := values["linting"].(string)
+			if !exists {
+				linting = values["linter"].(string)
+			}
+			setup.Linting = linting
+			setup.Formatting = values["formatting"].(string)
+			parts = append(parts, setup.Linting, setup.Formatting)
+		}
+		if manifest.Setup.ExpoStyling {
+			setup.Styling = values["styling"].(string)
+			parts = append(parts, setup.Styling)
+			if setup.Styling == "unistyles" {
+				plan.Warnings = append(plan.Warnings, "Unistyles uses native modules and requires an Expo development build; it is not available in Expo Go.")
+			}
+			if setup.Styling == "nativewind" {
+				plan.Warnings = append(plan.Warnings, "NativeWind 5 is currently a preview release.")
+			}
+		}
+		setupStep := PlanStep{
+			ID:      "configure-project",
+			Kind:    StepKindProjectSetup,
+			Label:   "Configure project tooling",
+			Dir:     filepath.Join(projectDir, filepath.FromSlash(manifest.Setup.NodeProjectDir)),
+			Env:     map[string]string{},
+			Args:    []string{},
+			Display: "Configure " + strings.Join(parts, " + "),
+			Setup:   setup,
+		}
+		plan.Steps = insertProjectStep(plan.Steps, setupStep, projectDir)
+	}
+
 	if request.MinimumReleaseAge != nil {
 		plan.Warnings = append(plan.Warnings, releaseAgeWarnings(*request.MinimumReleaseAge, planFamilies)...)
 		if config := releaseAgeProjectConfig(request.PackageManager, *request.MinimumReleaseAge); config != nil {
@@ -160,7 +198,7 @@ func Resolve(manifest recipe.Manifest, request ScaffoldRequest, resolver BinaryR
 				Display: releaseAgeConfigDisplay(*config),
 				Config:  config,
 			}
-			plan.Steps = insertProjectConfigStep(plan.Steps, configStep, projectDir)
+			plan.Steps = insertProjectStep(plan.Steps, configStep, projectDir)
 		}
 	}
 
@@ -172,7 +210,7 @@ func Resolve(manifest recipe.Manifest, request ScaffoldRequest, resolver BinaryR
 	return plan, nil
 }
 
-func insertProjectConfigStep(steps []PlanStep, configStep PlanStep, projectDir string) []PlanStep {
+func insertProjectStep(steps []PlanStep, projectStep PlanStep, projectDir string) []PlanStep {
 	insertAt := len(steps)
 	cleanProjectDir := filepath.Clean(projectDir)
 	// Recipes create the project from their first step. Insert before the first
@@ -185,7 +223,7 @@ func insertProjectConfigStep(steps []PlanStep, configStep PlanStep, projectDir s
 	}
 	steps = append(steps, PlanStep{})
 	copy(steps[insertAt+1:], steps[insertAt:])
-	steps[insertAt] = configStep
+	steps[insertAt] = projectStep
 	return steps
 }
 
@@ -479,6 +517,7 @@ type hashStep struct {
 	Env     []hashEnvironment `json:"env"`
 	Display string            `json:"display"`
 	Config  *ProjectConfig    `json:"config,omitempty"`
+	Setup   *ProjectSetup     `json:"setup,omitempty"`
 }
 
 func hashSteps(steps []PlanStep) (string, error) {
@@ -503,6 +542,7 @@ func hashSteps(steps []PlanStep) (string, error) {
 			Env:     environment,
 			Display: step.Display,
 			Config:  step.Config,
+			Setup:   step.Setup,
 		})
 	}
 	data, err := json.Marshal(canonical)

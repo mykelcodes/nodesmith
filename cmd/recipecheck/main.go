@@ -412,14 +412,18 @@ func displayArgv(binary string, args []string) string {
 func logPlan(logger *log.Logger, phase string, plan planner.Plan) {
 	logger.Printf("%s plan: recipe=%s project=%s steps=%d", phase, plan.RecipeID, plan.ProjectDir, len(plan.Steps))
 	for index, step := range plan.Steps {
+		operation := displayArgv(step.Bin, step.Args)
+		if step.Kind != "" && step.Kind != planner.StepKindCommand {
+			operation = step.Display
+		}
 		logger.Printf(
-			"%s step %d/%d id=%s cwd=%s argv=%s",
+			"%s step %d/%d id=%s cwd=%s operation=%s",
 			phase,
 			index+1,
 			len(plan.Steps),
 			step.ID,
 			step.Dir,
-			displayArgv(step.Bin, step.Args),
+			operation,
 		)
 	}
 }

@@ -75,6 +75,9 @@
       "minimum": 0,
       "maximum": 525600
     },
+    "setup": {
+      "$ref": "#/$defs/setup"
+    },
     "requires": {
       "$ref": "#/$defs/requires"
     },
@@ -93,6 +96,22 @@
     }
   },
   "$defs": {
+    "setup": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "nodeTooling": {
+          "type": "boolean"
+        },
+        "nodeProjectDir": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$"
+        },
+        "expoStyling": {
+          "type": "boolean"
+        }
+      }
+    },
     "id": {
       "type": "string",
       "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"

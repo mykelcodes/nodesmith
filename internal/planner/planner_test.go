@@ -142,8 +142,8 @@ func TestResolveNeverSplitsOrReinterpretsSubstitutedValues(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Resolve() error = %v", err)
 			}
-			if len(plan.Steps) != 1 {
-				t.Fatalf("step count = %d, want only scaffold", len(plan.Steps))
+			if len(plan.Steps) != 2 {
+				t.Fatalf("step count = %d, want scaffold and project setup", len(plan.Steps))
 			}
 			wantArgs := []string{
 				"--yes",
@@ -183,7 +183,7 @@ func TestResolvePrependsNativeResolverArguments(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(plan.Steps) != 1 || plan.Steps[0].Args[0] != "/tools/npm-cli.js" {
+	if len(plan.Steps) != 2 || plan.Steps[0].Args[0] != "/tools/npm-cli.js" {
 		t.Fatalf("resolved steps = %#v, want fixed native argv prefix", plan.Steps)
 	}
 }
@@ -201,11 +201,73 @@ func TestResolveNestJSDoesNotApplyHiddenStrictDefaultToJavaScript(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(plan.Steps) != 1 {
-		t.Fatalf("step count = %d, want scaffold only", len(plan.Steps))
+	if len(plan.Steps) != 2 {
+		t.Fatalf("step count = %d, want scaffold and project setup", len(plan.Steps))
 	}
 	if slices.Contains(plan.Steps[0].Args, "--strict") {
 		t.Fatalf("JavaScript scaffold args contain --strict: %#v", plan.Steps[0].Args)
+	}
+}
+
+func TestResolveExpoToolingSelections(t *testing.T) {
+	t.Parallel()
+
+	manifest := loadBundledManifest(t, "expo")
+	plan, err := Resolve(manifest, ScaffoldRequest{
+		RecipeID:       "expo",
+		ProjectName:    "mobile",
+		ParentDir:      ".",
+		PackageManager: "npm",
+		Answers: map[string]any{
+			"template":   "blank-typescript",
+			"styling":    "nativewind",
+			"linting":    "oxlint",
+			"formatting": "oxfmt",
+		},
+	}, &fakeResolver{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(plan.Steps) != 2 {
+		t.Fatalf("steps = %#v", plan.Steps)
+	}
+	setup := plan.Steps[1]
+	if setup.Kind != StepKindProjectSetup || setup.Setup == nil {
+		t.Fatalf("setup step = %#v", setup)
+	}
+	want := ProjectSetup{
+		RecipeID: "expo", Template: "blank-typescript", Linting: "oxlint", Formatting: "oxfmt", Styling: "nativewind",
+	}
+	if !reflect.DeepEqual(*setup.Setup, want) {
+		t.Fatalf("setup = %#v, want %#v", *setup.Setup, want)
+	}
+	if len(plan.Warnings) != 1 || !strings.Contains(plan.Warnings[0], "preview") {
+		t.Fatalf("warnings = %#v", plan.Warnings)
+	}
+}
+
+func TestResolveNextKeepsLegacyLinterAnswerKey(t *testing.T) {
+	t.Parallel()
+
+	manifest := loadBundledManifest(t, "next")
+	plan, err := Resolve(manifest, ScaffoldRequest{
+		RecipeID:       "next",
+		ProjectName:    "web",
+		ParentDir:      ".",
+		PackageManager: "npm",
+		Answers: map[string]any{
+			"linter":     "oxlint",
+			"formatting": "oxfmt",
+		},
+	}, &fakeResolver{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(plan.Steps[0].Args, "--no-eslint") {
+		t.Fatalf("Next scaffold args = %#v, want --no-eslint for Oxlint", plan.Steps[0].Args)
+	}
+	if plan.Steps[1].Setup == nil || plan.Steps[1].Setup.Linting != "oxlint" || plan.Steps[1].Setup.Formatting != "oxfmt" {
+		t.Fatalf("setup step = %#v", plan.Steps[1])
 	}
 }
 

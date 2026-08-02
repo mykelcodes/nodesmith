@@ -117,6 +117,26 @@ export namespace services {
 	        this.stepId = source["stepId"];
 	    }
 	}
+	export class ProjectSetup {
+	    recipeId: string;
+	    template: string;
+	    linting: string;
+	    formatting: string;
+	    styling: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ProjectSetup(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.recipeId = source["recipeId"];
+	        this.template = source["template"];
+	        this.linting = source["linting"];
+	        this.formatting = source["formatting"];
+	        this.styling = source["styling"];
+	    }
+	}
 	export class ProjectConfig {
 	    path: string;
 	    format: string;
@@ -147,6 +167,7 @@ export namespace services {
 	    env: Record<string, string>;
 	    display: string;
 	    config?: ProjectConfig;
+	    setup?: ProjectSetup;
 	
 	    static createFrom(source: any = {}) {
 	        return new PlanStep(source);
@@ -163,6 +184,7 @@ export namespace services {
 	        this.env = source["env"];
 	        this.display = source["display"];
 	        this.config = this.convertValues(source["config"], ProjectConfig);
+	        this.setup = this.convertValues(source["setup"], ProjectSetup);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

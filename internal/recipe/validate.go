@@ -14,6 +14,7 @@ import (
 const maxArgObjectDepth = 3
 
 var kebabCase = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
+var setupProjectDirectory = regexp.MustCompile(`^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$`)
 
 var builtInVariables = map[string]struct{}{
 	"projectName":    {},
@@ -99,6 +100,9 @@ func Validate(manifest Manifest) error {
 	if err != nil {
 		return err
 	}
+	if err := validateSetup(manifest.Setup, manifest.Fields); err != nil {
+		return err
+	}
 	known := make(map[string]FieldType, len(fields)+len(builtInVariables))
 	for identifier := range builtInVariables {
 		known[identifier] = ""
@@ -158,6 +162,66 @@ func Validate(manifest Manifest) error {
 		}
 	}
 
+	return nil
+}
+
+func validateSetup(setup Setup, fields []Field) error {
+	if setup.NodeProjectDir != "" {
+		valid := setup.NodeTooling && setupProjectDirectory.MatchString(setup.NodeProjectDir)
+		for _, segment := range strings.Split(setup.NodeProjectDir, "/") {
+			valid = valid && segment != "." && segment != ".."
+		}
+		if !valid {
+			return fmt.Errorf("setup.nodeProjectDir: must be a relative project subdirectory used with nodeTooling")
+		}
+	}
+	byID := make(map[string]Field, len(fields))
+	for _, field := range fields {
+		byID[field.ID] = field
+	}
+	if setup.NodeTooling {
+		lintingField := "linting"
+		if _, exists := byID[lintingField]; !exists {
+			if _, legacyExists := byID["linter"]; legacyExists {
+				lintingField = "linter"
+			}
+		}
+		if err := validateSetupSelect(byID, lintingField, []string{"eslint", "oxlint", "biome"}); err != nil {
+			return fmt.Errorf("setup.nodeTooling: %w", err)
+		}
+		if err := validateSetupSelect(byID, "formatting", []string{"prettier", "oxfmt"}); err != nil {
+			return fmt.Errorf("setup.nodeTooling: %w", err)
+		}
+	}
+	if setup.ExpoStyling {
+		if err := validateSetupSelect(byID, "styling", []string{"uniwind", "nativewind", "unistyles"}); err != nil {
+			return fmt.Errorf("setup.expoStyling: %w", err)
+		}
+		if err := validateSetupSelect(byID, "template", []string{"default", "blank", "blank-typescript", "tabs", "bare-minimum"}); err != nil {
+			return fmt.Errorf("setup.expoStyling: %w", err)
+		}
+	}
+	return nil
+}
+
+func validateSetupSelect(fields map[string]Field, id string, expected []string) error {
+	field, exists := fields[id]
+	if !exists {
+		return fmt.Errorf("requires a %q field", id)
+	}
+	if field.Type != FieldSelect {
+		return fmt.Errorf("field %q must have type %q", id, FieldSelect)
+	}
+	actual := make([]string, 0, len(field.Options))
+	for _, option := range field.Options {
+		actual = append(actual, option.Value)
+	}
+	slices.Sort(actual)
+	wanted := slices.Clone(expected)
+	slices.Sort(wanted)
+	if !slices.Equal(actual, wanted) {
+		return fmt.Errorf("field %q options must be %s", id, strings.Join(expected, ", "))
+	}
 	return nil
 }
 

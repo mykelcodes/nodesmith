@@ -25,6 +25,22 @@
       "display": "/tools/npx --yes create-astro@latest astro-app --template minimal --yes --no-install --no-git --no-ai --skip-houston"
     },
     {
+      "id": "configure-project",
+      "kind": "project-setup",
+      "label": "Configure project tooling",
+      "bin": "",
+      "args": [],
+      "dir": "astro-app",
+      "env": {},
+      "display": "Configure eslint + prettier",
+      "setup": {
+        "recipeId": "astro",
+        "template": "minimal",
+        "linting": "eslint",
+        "formatting": "prettier"
+      }
+    },
+    {
       "id": "install",
       "label": "Install dependencies",
       "bin": "/tools/pnpm",
@@ -84,5 +100,5 @@
   "warnings": [
     "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
   ],
-  "hash": "5ab13d9b037138a00c9e6e080feb0bd3c7cc2e7dcef4682d9e55ca6d1445dc2e"
+  "hash": "a08e8e19eff1059544b711fed5006f618172f8dab743ec4b41664953c438a7e0"
 }

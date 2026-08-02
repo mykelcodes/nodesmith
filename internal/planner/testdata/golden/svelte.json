@@ -21,6 +21,21 @@
       "display": "/tools/npx --yes create-vite@latest svelte-app --template svelte-ts --no-interactive"
     },
     {
+      "id": "configure-project",
+      "kind": "project-setup",
+      "label": "Configure project tooling",
+      "bin": "",
+      "args": [],
+      "dir": "svelte-app",
+      "env": {},
+      "display": "Configure eslint + prettier",
+      "setup": {
+        "recipeId": "svelte",
+        "linting": "eslint",
+        "formatting": "prettier"
+      }
+    },
+    {
       "id": "install",
       "label": "Install dependencies",
       "bin": "/tools/pnpm",
@@ -80,5 +95,5 @@
   "warnings": [
     "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
   ],
-  "hash": "1548e260c4c9e3135fe4321639cff93664e2562f1dc23e69a9c53197687bd142"
+  "hash": "1418ff95774f1fd19d0e58257d579b5c48d8b66015a70dcf77dd2d68e654b607"
 }

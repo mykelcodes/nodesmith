@@ -100,6 +100,7 @@ prompts, and leaves dependency installation and Git initialisation to Nodesmith:
 | `tags` | Unique kebab-case search and filter terms. |
 | `icon` | Key understood by the Nodesmith frontend icon map. |
 | `verifiedAt` | Date in `YYYY-MM-DD` form when the command was last verified. |
+| `setup` | Optional opt-in to Nodesmith's shared Node tooling and Expo styling configuration. |
 | `requires` | Node range, supported package managers, and required extra tools. |
 | `fields` | Options used to build the dynamic form. |
 | `steps` | Ordered process invocations; at least one is required. |
@@ -188,6 +189,36 @@ Set the optional top-level `installPolicy` to `"required"` when the upstream gen
 installs dependencies and cannot honour `installDeps=false`. Nodesmith treats omitted values as
 `"optional"` for backwards compatibility and disables the corresponding UI control for required
 recipes.
+
+## Shared project setup
+
+Bundled recipes can opt into fixed, reviewable post-scaffold setup with the top-level `setup`
+object. This is intentionally a closed capability rather than an arbitrary file-writing or script
+hook:
+
+```json
+{
+  "setup": {
+    "nodeTooling": true,
+    "expoStyling": true
+  }
+}
+```
+
+`nodeTooling` requires `linting` and `formatting` select fields (`linter` is also accepted for
+backwards compatibility). Their option values must be
+`eslint`, `oxlint`, and `biome`, and `prettier` and `oxfmt`, respectively. Nodesmith adds the
+selected development dependencies, package scripts, and configuration files before the recipe's
+install step. Framework-specific ESLint and Prettier plugins are included for Astro and Svelte
+projects.
+
+`expoStyling` requires a `styling` select with `uniwind`, `nativewind`, and `unistyles`, plus the
+standard Expo `template` field. Nodesmith configures the selected packages, Metro/Babel/PostCSS
+files, global stylesheet, and entry import as required by that styling system.
+
+When a generated Node package lives below `projectDir`, set a relative `nodeProjectDir`, for
+example `"frontend"` for Wails. User recipes that omit `setup` keep the original command-only
+behavior.
 
 ## Argument nodes
 

@@ -367,6 +367,16 @@ func planDTO(source planner.Plan) Plan {
 				Value:   step.Config.Value,
 			}
 		}
+		var setup *ProjectSetup
+		if step.Setup != nil {
+			setup = &ProjectSetup{
+				RecipeID:   step.Setup.RecipeID,
+				Template:   step.Setup.Template,
+				Linting:    step.Setup.Linting,
+				Formatting: step.Setup.Formatting,
+				Styling:    step.Setup.Styling,
+			}
+		}
 		steps = append(steps, PlanStep{
 			ID:      step.ID,
 			Kind:    kind,
@@ -377,6 +387,7 @@ func planDTO(source planner.Plan) Plan {
 			Env:     step.Env,
 			Display: step.Display,
 			Config:  config,
+			Setup:   setup,
 		})
 	}
 	return Plan{

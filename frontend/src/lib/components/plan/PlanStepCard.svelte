@@ -12,6 +12,8 @@
 
 	let { step, index, onCopy, copied = false }: Props = $props();
 	const isConfig = $derived(step.kind === 'project-config' && step.config !== null);
+	const isSetup = $derived(step.kind === 'project-setup' && step.setup !== null);
+	const isStructured = $derived(isConfig || isSetup);
 </script>
 
 <article class="overflow-hidden rounded-panel border border-line bg-panel/80 shadow-sm">
@@ -35,7 +37,7 @@
 	<div class="p-4">
 		<div class="flex items-start gap-3 rounded-control border border-line bg-canvas/75 p-3">
 			<Icon
-				name={isConfig ? 'settings' : 'terminal'}
+				name={isStructured ? 'settings' : 'terminal'}
 				class="mt-0.5 size-4 shrink-0 text-brand-strong"
 			/>
 			<code class="min-w-0 flex-1 overflow-x-auto font-mono text-xs leading-5 text-ink">
@@ -46,7 +48,7 @@
 				size="icon"
 				class="-m-1 size-7"
 				onclick={() => onCopy(step.display)}
-				aria-label={`Copy ${isConfig ? 'configuration details' : 'command'} for ${step.label}`}
+				aria-label={`Copy ${isStructured ? 'configuration details' : 'command'} for ${step.label}`}
 			>
 				<Icon name={copied ? 'check' : 'copy'} class="size-3.5" />
 			</Button>
@@ -56,7 +58,7 @@
 			<summary
 				class="w-fit cursor-pointer rounded-md font-semibold transition-colors hover:text-ink focus-visible:ring-3 focus-visible:ring-brand/25 focus-visible:outline-none"
 			>
-				{isConfig ? 'Configuration edit' : 'Resolved arguments'}
+				{isStructured ? 'Configuration edit' : 'Resolved arguments'}
 			</summary>
 			<dl class="mt-3 grid gap-2 border-l border-line pl-3">
 				{#if step.config}
@@ -71,6 +73,13 @@
 								.value}
 						</dd>
 					</div>
+				{:else if step.setup}
+					{#each [['Linting', step.setup.linting], ['Formatting', step.setup.formatting], ['Styling', step.setup.styling]].filter((entry) => entry[1]) as entry (entry[0])}
+						<div class="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-3">
+							<dt class="text-ink-faint">{entry[0]}</dt>
+							<dd class="font-mono text-ink">{entry[1]}</dd>
+						</div>
+					{/each}
 				{:else}
 					<div class="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-3">
 						<dt class="text-ink-faint">Binary</dt>

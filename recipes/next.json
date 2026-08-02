@@ -13,8 +13,11 @@
   ],
   "icon": "next",
   "verifiedAt": "2026-07-28",
+  "setup": {
+    "nodeTooling": true
+  },
   "requires": {
-    "node": ">=20.9.0",
+    "node": ">=20.19.0",
     "packageManagers": [
       "pnpm",
       "npm",
@@ -32,7 +35,7 @@
     },
     {
       "id": "linter",
-      "label": "Linter",
+      "label": "Linting",
       "type": "select",
       "default": "eslint",
       "options": [
@@ -41,12 +44,12 @@
           "label": "ESLint"
         },
         {
-          "value": "biome",
-          "label": "Biome"
+          "value": "oxlint",
+          "label": "Oxlint"
         },
         {
-          "value": "none",
-          "label": "None"
+          "value": "biome",
+          "label": "Biome"
         }
       ]
     },
@@ -80,6 +83,23 @@
       "type": "boolean",
       "default": false,
       "help": "Add the framework-maintained instructions file for coding agents."
+    },
+    {
+      "id": "formatting",
+      "label": "Formatting",
+      "type": "select",
+      "default": "prettier",
+      "help": "Configure a formatter and format/format:check package scripts.",
+      "options": [
+        {
+          "value": "prettier",
+          "label": "Prettier"
+        },
+        {
+          "value": "oxfmt",
+          "label": "Oxfmt"
+        }
+      ]
     }
   ],
   "steps": [

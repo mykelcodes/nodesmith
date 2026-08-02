@@ -121,7 +121,8 @@ function resolvePlan(): Plan {
 				args: [...backend.args],
 				display: `npx ${backend.args.join(' ')}`,
 				kind: 'command',
-				config: null
+				config: null,
+				setup: null
 			}
 		]
 	};

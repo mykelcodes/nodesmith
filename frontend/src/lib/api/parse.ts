@@ -16,6 +16,7 @@ import type {
 	PlanStepKind,
 	Preset,
 	ProjectConfig,
+	ProjectSetup,
 	Recipe,
 	RecipeArg,
 	RecipeField,
@@ -333,7 +334,7 @@ export function parseScaffoldRequest(value: unknown, path = 'ScaffoldRequest'): 
 
 function parsePlanStep(value: unknown, path: string): PlanStep {
 	const source = object(value, path);
-	const kinds = ['command', 'project-config'] as const;
+	const kinds = ['command', 'project-config', 'project-setup'] as const;
 	return {
 		id: string(source.id, `${path}.id`),
 		kind:
@@ -349,7 +350,22 @@ function parsePlanStep(value: unknown, path: string): PlanStep {
 		config:
 			source.config === null || source.config === undefined
 				? null
-				: parseProjectConfig(source.config, `${path}.config`)
+				: parseProjectConfig(source.config, `${path}.config`),
+		setup:
+			source.setup === null || source.setup === undefined
+				? null
+				: parseProjectSetup(source.setup, `${path}.setup`)
+	};
+}
+
+function parseProjectSetup(value: unknown, path: string): ProjectSetup {
+	const source = object(value, path);
+	return {
+		recipeId: string(source.recipeId, `${path}.recipeId`),
+		template: string(source.template, `${path}.template`),
+		linting: string(source.linting, `${path}.linting`),
+		formatting: string(source.formatting, `${path}.formatting`),
+		styling: string(source.styling, `${path}.styling`)
 	};
 }
 

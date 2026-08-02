@@ -3,6 +3,7 @@ package planner
 const (
 	StepKindCommand       = "command"
 	StepKindProjectConfig = "project-config"
+	StepKindProjectSetup  = "project-setup"
 
 	ConfigFormatProperties = "properties"
 	ConfigFormatTOML       = "toml"
@@ -42,6 +43,17 @@ type PlanStep struct {
 	Env     map[string]string `json:"env"`
 	Display string            `json:"display"`
 	Config  *ProjectConfig    `json:"config,omitempty"`
+	Setup   *ProjectSetup     `json:"setup,omitempty"`
+}
+
+// ProjectSetup describes shared, safe post-scaffold configuration selected by
+// recipe fields. The runner owns the fixed file and package mutations.
+type ProjectSetup struct {
+	RecipeID   string `json:"recipeId"`
+	Template   string `json:"template,omitempty"`
+	Linting    string `json:"linting,omitempty"`
+	Formatting string `json:"formatting,omitempty"`
+	Styling    string `json:"styling,omitempty"`
 }
 
 // ProjectConfig describes one safe, structured edit to a package-manager

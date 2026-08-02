@@ -26,6 +26,21 @@
       "display": "/tools/npx --yes @nestjs/cli@latest new nestjs-app --package-manager pnpm --language typescript --skip-install --skip-git --strict"
     },
     {
+      "id": "configure-project",
+      "kind": "project-setup",
+      "label": "Configure project tooling",
+      "bin": "",
+      "args": [],
+      "dir": "nestjs-app",
+      "env": {},
+      "display": "Configure eslint + prettier",
+      "setup": {
+        "recipeId": "nestjs",
+        "linting": "eslint",
+        "formatting": "prettier"
+      }
+    },
+    {
       "id": "install",
       "label": "Install dependencies",
       "bin": "/tools/pnpm",
@@ -85,5 +100,5 @@
   "warnings": [
     "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
   ],
-  "hash": "1ef8bf717508bfa7e38c1df3fb390f381980de29355b25318849e1ee1ca3c9cb"
+  "hash": "c98bafd87d3cfce7155c21576f924bd82ee9f053b8c6e396f5b3c7476e296cda"
 }

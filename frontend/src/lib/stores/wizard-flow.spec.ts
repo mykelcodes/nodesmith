@@ -46,7 +46,8 @@ const plan: Plan = {
 			dir: '/projects',
 			env: { CI: '1' },
 			display: 'pnpm create vite demo',
-			config: null
+			config: null,
+			setup: null
 		}
 	],
 	warnings: [],

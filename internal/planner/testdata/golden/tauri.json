@@ -27,6 +27,22 @@
       "display": "/tools/npx --yes create-tauri-app@latest tauri-app --manager pnpm --template svelte-ts --identifier com.example.app --tauri-version 2 --yes"
     },
     {
+      "id": "configure-project",
+      "kind": "project-setup",
+      "label": "Configure project tooling",
+      "bin": "",
+      "args": [],
+      "dir": "tauri-app",
+      "env": {},
+      "display": "Configure eslint + prettier",
+      "setup": {
+        "recipeId": "tauri",
+        "template": "svelte-ts",
+        "linting": "eslint",
+        "formatting": "prettier"
+      }
+    },
+    {
       "id": "install",
       "label": "Install dependencies",
       "bin": "/tools/pnpm",
@@ -86,5 +102,5 @@
   "warnings": [
     "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
   ],
-  "hash": "d54557df946065391466863bbb12d4a2c2eb9f9c33548a0d4a7a4e7d5fc93683"
+  "hash": "1edd04edf8d461423c59c2d3b49ef188a08e88312b131dc61efd21226bb59b79"
 }

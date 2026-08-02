@@ -24,6 +24,22 @@
       "display": "/tools/wails init -n wails-app -d wails-app -t svelte-ts -nocolour -g"
     },
     {
+      "id": "configure-project",
+      "kind": "project-setup",
+      "label": "Configure project tooling",
+      "bin": "",
+      "args": [],
+      "dir": "wails-app/frontend",
+      "env": {},
+      "display": "Configure eslint + prettier",
+      "setup": {
+        "recipeId": "wails",
+        "template": "svelte-ts",
+        "linting": "eslint",
+        "formatting": "prettier"
+      }
+    },
+    {
       "id": "install",
       "label": "Install frontend dependencies",
       "bin": "/tools/npm",
@@ -71,5 +87,5 @@
     }
   ],
   "warnings": [],
-  "hash": "ee6e8241ffc464837f51c00f62f7aae2faa32e897c84fdfa4dee6235308b3a46"
+  "hash": "8899692c2e14b565234daafc68376ca869e9f2c3b5b88d323b4bc470333f9246"
 }

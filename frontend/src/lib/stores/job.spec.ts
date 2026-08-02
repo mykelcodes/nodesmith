@@ -29,7 +29,8 @@ const planSteps: PlanStep[] = ['create', 'install', 'git'].map((id) => ({
 	dir: '/projects',
 	env: {},
 	display: id,
-	config: null
+	config: null,
+	setup: null
 }));
 
 describe('mergeLogLines', () => {

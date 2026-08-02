@@ -43,6 +43,22 @@ func TestDTOsEncodeEmptySlicesAsArrays(t *testing.T) {
 	})
 }
 
+func TestPlanDTOIncludesProjectSetup(t *testing.T) {
+	converted := planDTO(planner.Plan{Steps: []planner.PlanStep{{
+		ID: "configure-project",
+		Setup: &planner.ProjectSetup{
+			RecipeID: "expo", Template: "tabs", Linting: "oxlint", Formatting: "oxfmt", Styling: "uniwind",
+		},
+	}}})
+	if len(converted.Steps) != 1 || converted.Steps[0].Setup == nil {
+		t.Fatalf("plan DTO = %#v", converted)
+	}
+	setup := converted.Steps[0].Setup
+	if setup.RecipeID != "expo" || setup.Template != "tabs" || setup.Linting != "oxlint" || setup.Formatting != "oxfmt" || setup.Styling != "uniwind" {
+		t.Fatalf("setup DTO = %#v", setup)
+	}
+}
+
 func assertNoNullArray(t *testing.T, name string, value any) {
 	t.Helper()
 	assertNoNilSlice(t, name, reflect.ValueOf(value))

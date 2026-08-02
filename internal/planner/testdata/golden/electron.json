@@ -27,6 +27,21 @@
       "display": "/tools/npx --yes create-electron-app@latest electron-app --template vite-typescript --skip-git --electron-version latest"
     },
     {
+      "id": "configure-project",
+      "kind": "project-setup",
+      "label": "Configure project tooling",
+      "bin": "",
+      "args": [],
+      "dir": "electron-app",
+      "env": {},
+      "display": "Configure eslint + prettier",
+      "setup": {
+        "recipeId": "electron",
+        "linting": "eslint",
+        "formatting": "prettier"
+      }
+    },
+    {
       "id": "pnpm-build-policy",
       "label": "Persist pnpm build policy",
       "bin": "/tools/pnpm",
@@ -60,6 +75,20 @@
         "CI": "true"
       },
       "display": "/tools/pnpm config set nodeLinker hoisted --location=project"
+    },
+    {
+      "id": "install-tooling",
+      "label": "Install configured tooling",
+      "bin": "/tools/pnpm",
+      "args": [
+        "install",
+        "--config.strict-dep-builds=false"
+      ],
+      "dir": "electron-app",
+      "env": {
+        "CI": "true"
+      },
+      "display": "/tools/pnpm install --config.strict-dep-builds=false"
     },
     {
       "id": "git-init",
@@ -104,6 +133,8 @@
       "display": "/tools/git commit -m 'Initial commit'"
     }
   ],
-  "warnings": [],
-  "hash": "cdff6132fed1f86ce966454b7ea6490dc8d51f116a97a20a085749f745827496"
+  "warnings": [
+    "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
+  ],
+  "hash": "3104580e2ec516abb691ed6ab74dead672df68c4dde2061d22b00f554d10b6b3"
 }

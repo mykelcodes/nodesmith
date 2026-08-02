@@ -20,6 +20,21 @@
       "display": "/tools/npx --yes express-generator@latest express-app --view ejs"
     },
     {
+      "id": "configure-project",
+      "kind": "project-setup",
+      "label": "Configure project tooling",
+      "bin": "",
+      "args": [],
+      "dir": "express-app",
+      "env": {},
+      "display": "Configure eslint + prettier",
+      "setup": {
+        "recipeId": "express",
+        "linting": "eslint",
+        "formatting": "prettier"
+      }
+    },
+    {
       "id": "install",
       "label": "Install dependencies",
       "bin": "/tools/pnpm",
@@ -79,5 +94,5 @@
   "warnings": [
     "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
   ],
-  "hash": "5dd7b5d21c54bf23dd6bca45e4b1ce6b3582199d83811c54475bb7eb0370313c"
+  "hash": "0eb49f98bc2de643a0636e411640741ce711fdd490eda8daa45f73cd485777e2"
 }

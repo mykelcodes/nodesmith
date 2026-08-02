@@ -13,6 +13,9 @@
   ],
   "icon": "astro",
   "verifiedAt": "2026-07-28",
+  "setup": {
+    "nodeTooling": true
+  },
   "requires": {
     "node": ">=22.12.0",
     "packageManagers": [
@@ -42,6 +45,44 @@
         {
           "value": "portfolio",
           "label": "Portfolio"
+        }
+      ]
+    },
+    {
+      "id": "linting",
+      "label": "Linting",
+      "type": "select",
+      "default": "eslint",
+      "help": "Configure a linter and package scripts for the generated project.",
+      "options": [
+        {
+          "value": "eslint",
+          "label": "ESLint"
+        },
+        {
+          "value": "oxlint",
+          "label": "Oxlint"
+        },
+        {
+          "value": "biome",
+          "label": "Biome"
+        }
+      ]
+    },
+    {
+      "id": "formatting",
+      "label": "Formatting",
+      "type": "select",
+      "default": "prettier",
+      "help": "Configure a formatter and format/format:check package scripts.",
+      "options": [
+        {
+          "value": "prettier",
+          "label": "Prettier"
+        },
+        {
+          "value": "oxfmt",
+          "label": "Oxfmt"
         }
       ]
     }

@@ -13,8 +13,12 @@
   "icon": "wails",
   "verifiedAt": "2026-07-31",
   "installPolicy": "required",
+  "setup": {
+    "nodeTooling": true,
+    "nodeProjectDir": "frontend"
+  },
   "requires": {
-    "node": ">=18.0.0",
+    "node": ">=20.19.0",
     "packageManagers": [
       "pnpm",
       "npm",
@@ -87,6 +91,44 @@
           "label": "Plain HTML, JavaScript, and CSS"
         }
       ]
+    },
+    {
+      "id": "linting",
+      "label": "Linting",
+      "type": "select",
+      "default": "eslint",
+      "help": "Configure a linter and package scripts for the generated project.",
+      "options": [
+        {
+          "value": "eslint",
+          "label": "ESLint"
+        },
+        {
+          "value": "oxlint",
+          "label": "Oxlint"
+        },
+        {
+          "value": "biome",
+          "label": "Biome"
+        }
+      ]
+    },
+    {
+      "id": "formatting",
+      "label": "Formatting",
+      "type": "select",
+      "default": "prettier",
+      "help": "Configure a formatter and format/format:check package scripts.",
+      "options": [
+        {
+          "value": "prettier",
+          "label": "Prettier"
+        },
+        {
+          "value": "oxfmt",
+          "label": "Oxfmt"
+        }
+      ]
     }
   ],
   "steps": [
@@ -143,8 +185,7 @@
             }
           ]
         }
-      ],
-      "when": "installDeps"
+      ]
     },
     {
       "id": "git-add",

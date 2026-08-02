@@ -34,7 +34,10 @@ Nodesmith ships 14 validated recipes:
 - Full stack: Astro, Next.js, and SvelteKit.
 - Backend: Express, Hono, and NestJS.
 - Desktop: Electron, Tauri, and Wails v2.
-- Mobile: Expo.
+- Mobile: Expo, with Uniwind, NativeWind, or Unistyles styling.
+
+Every bundled Node project can be configured with ESLint, Oxlint, or Biome and formatted with
+Prettier or Oxfmt during setup.
 
 Recipe manifests live in [`recipes/`](recipes/). User recipes can override bundled recipes from the
 Nodesmith configuration directory; invalid user recipes are skipped with a surfaced warning. See

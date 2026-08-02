@@ -23,9 +23,19 @@ type Manifest struct {
 	// pointer means the recipe expresses no opinion and the global preference
 	// applies; zero explicitly disables the cooldown for this recipe.
 	MinimumReleaseAge *int         `json:"minimumReleaseAge,omitempty"`
+	Setup             Setup        `json:"setup,omitempty"`
 	Requires          Requirements `json:"requires"`
 	Fields            []Field      `json:"fields"`
 	Steps             []Step       `json:"steps"`
+}
+
+// Setup opts a recipe into Nodesmith's shared post-scaffold configuration.
+// The fields that drive each capability remain ordinary recipe fields so they
+// are rendered by the existing dynamic configuration form.
+type Setup struct {
+	NodeTooling    bool   `json:"nodeTooling,omitempty"`
+	NodeProjectDir string `json:"nodeProjectDir,omitempty"`
+	ExpoStyling    bool   `json:"expoStyling,omitempty"`
 }
 
 // MaxMinimumReleaseAge caps a cooldown at one year of minutes so an obvious

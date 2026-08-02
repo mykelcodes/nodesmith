@@ -24,6 +24,23 @@
       "display": "/tools/npx --yes create-expo-app@latest expo-app --template default --yes --no-install --no-agents-md"
     },
     {
+      "id": "configure-project",
+      "kind": "project-setup",
+      "label": "Configure project tooling",
+      "bin": "",
+      "args": [],
+      "dir": "expo-app",
+      "env": {},
+      "display": "Configure eslint + prettier + uniwind",
+      "setup": {
+        "recipeId": "expo",
+        "template": "default",
+        "linting": "eslint",
+        "formatting": "prettier",
+        "styling": "uniwind"
+      }
+    },
+    {
       "id": "install",
       "label": "Install dependencies",
       "bin": "/tools/pnpm",
@@ -83,5 +100,5 @@
   "warnings": [
     "pnpm will leave unapproved dependency build scripts blocked instead of failing project creation. Review them and run pnpm approve-builds in the generated project if those scripts are required."
   ],
-  "hash": "90b60016f15619e27339beef609a80b79c4187a2e61754ea0061e172d5719cc7"
+  "hash": "d0d0c25375c2db30bedf8a3dd67841ae751fccb1cf6b88eeb0a7fcea4400c931"
 }

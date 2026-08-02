@@ -153,7 +153,7 @@ export interface ScaffoldRequest {
 	answers: Answers;
 }
 
-export type PlanStepKind = 'command' | 'project-config';
+export type PlanStepKind = 'command' | 'project-config' | 'project-setup';
 
 export interface ProjectConfig {
 	path: string;
@@ -161,6 +161,14 @@ export interface ProjectConfig {
 	section: string;
 	key: string;
 	value: string;
+}
+
+export interface ProjectSetup {
+	recipeId: string;
+	template: string;
+	linting: string;
+	formatting: string;
+	styling: string;
 }
 
 export interface PlanStep {
@@ -173,6 +181,7 @@ export interface PlanStep {
 	env: Record<string, string>;
 	display: string;
 	config: ProjectConfig | null;
+	setup: ProjectSetup | null;
 }
 
 export interface Plan {
