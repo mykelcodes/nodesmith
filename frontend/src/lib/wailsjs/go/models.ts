@@ -1,5 +1,5 @@
 export namespace services {
-	
+
 	export class HistoryEntry {
 	    id: string;
 	    recipeId: string;
@@ -13,11 +13,11 @@ export namespace services {
 	    // Go type: time
 	    createdAt: any;
 	    error: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new HistoryEntry(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -32,7 +32,7 @@ export namespace services {
 	        this.createdAt = this.convertValues(source["createdAt"], null);
 	        this.error = source["error"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -63,11 +63,11 @@ export namespace services {
 	    // Go type: time
 	    endedAt: any;
 	    error: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new Job(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -80,7 +80,7 @@ export namespace services {
 	        this.endedAt = this.convertValues(source["endedAt"], null);
 	        this.error = source["error"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -104,11 +104,11 @@ export namespace services {
 	    stream: string;
 	    text: string;
 	    stepId: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new LogLine(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.seq = source["seq"];
@@ -123,11 +123,11 @@ export namespace services {
 	    linting: string;
 	    formatting: string;
 	    styling: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ProjectSetup(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.recipeId = source["recipeId"];
@@ -143,11 +143,11 @@ export namespace services {
 	    section: string;
 	    key: string;
 	    value: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ProjectConfig(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
@@ -168,11 +168,11 @@ export namespace services {
 	    display: string;
 	    config?: ProjectConfig;
 	    setup?: ProjectSetup;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new PlanStep(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -186,7 +186,7 @@ export namespace services {
 	        this.config = this.convertValues(source["config"], ProjectConfig);
 	        this.setup = this.convertValues(source["setup"], ProjectSetup);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -211,11 +211,11 @@ export namespace services {
 	    steps: PlanStep[];
 	    warnings: string[];
 	    hash: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new Plan(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.recipeId = source["recipeId"];
@@ -224,7 +224,7 @@ export namespace services {
 	        this.warnings = source["warnings"];
 	        this.hash = source["hash"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -243,7 +243,7 @@ export namespace services {
 		    return a;
 		}
 	}
-	
+
 	export class ScaffoldRequest {
 	    recipeId: string;
 	    projectName: string;
@@ -253,11 +253,11 @@ export namespace services {
 	    gitInit: boolean;
 	    minimumReleaseAge?: number;
 	    answers: Record<string, any>;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ScaffoldRequest(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.recipeId = source["recipeId"];
@@ -278,11 +278,11 @@ export namespace services {
 	    createdAt: any;
 	    // Go type: time
 	    updatedAt: any;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new Preset(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -291,7 +291,7 @@ export namespace services {
 	        this.createdAt = this.convertValues(source["createdAt"], null);
 	        this.updatedAt = this.convertValues(source["updatedAt"], null);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -310,7 +310,7 @@ export namespace services {
 		    return a;
 		}
 	}
-	
+
 	export class RecipeStep {
 	    id: string;
 	    label: string;
@@ -319,11 +319,11 @@ export namespace services {
 	    env: Record<string, string>;
 	    args: any[];
 	    when: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RecipeStep(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -338,11 +338,11 @@ export namespace services {
 	export class RecipeOption {
 	    value: string;
 	    label: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RecipeOption(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.value = source["value"];
@@ -363,11 +363,11 @@ export namespace services {
 	    maxLength?: number;
 	    min?: number;
 	    max?: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RecipeField(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -384,7 +384,7 @@ export namespace services {
 	        this.min = source["min"];
 	        this.max = source["max"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -407,11 +407,11 @@ export namespace services {
 	    node: string;
 	    packageManagers: string[];
 	    tools: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RecipeRequirements(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.node = source["node"];
@@ -436,11 +436,11 @@ export namespace services {
 	    steps: RecipeStep[];
 	    available: boolean;
 	    unavailableReasons: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new Recipe(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.schemaVersion = source["schemaVersion"];
@@ -460,7 +460,7 @@ export namespace services {
 	        this.available = source["available"];
 	        this.unavailableReasons = source["unavailableReasons"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -479,10 +479,10 @@ export namespace services {
 		    return a;
 		}
 	}
-	
-	
-	
-	
+
+
+
+
 	export class RecipeSummary {
 	    id: string;
 	    name: string;
@@ -497,11 +497,11 @@ export namespace services {
 	    available: boolean;
 	    unavailableReasons: string[];
 	    defaultPackageManager: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RecipeSummary(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -523,11 +523,11 @@ export namespace services {
 	    count: number;
 	    warnings: string[];
 	    overrides: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ReloadResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.count = source["count"];
@@ -535,7 +535,7 @@ export namespace services {
 	        this.overrides = source["overrides"];
 	    }
 	}
-	
+
 	export class Settings {
 	    defaultParentDir: string;
 	    pathOverride: string;
@@ -544,11 +544,11 @@ export namespace services {
 	    openAfterCreate: boolean;
 	    minimumReleaseAge?: number;
 	    recipeMinimumReleaseAge?: Record<string, number>;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new Settings(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.defaultParentDir = source["defaultParentDir"];
@@ -566,11 +566,11 @@ export namespace services {
 	    version: string;
 	    present: boolean;
 	    error: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new Tool(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
@@ -586,11 +586,11 @@ export namespace services {
 	    detectedAt: any;
 	    tools: Tool[];
 	    pathWarning: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new Toolchain(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
@@ -598,7 +598,7 @@ export namespace services {
 	        this.tools = this.convertValues(source["tools"], Tool);
 	        this.pathWarning = source["pathWarning"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -620,11 +620,11 @@ export namespace services {
 	export class ValidationResult {
 	    valid: boolean;
 	    error: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ValidationResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.valid = source["valid"];

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"os"
+	"path/filepath"
 	"reflect"
 	"slices"
 	"strings"
@@ -78,6 +79,10 @@ func TestResolveBundledRecipeGoldens(t *testing.T) {
 			if len(plan.Steps) == 0 {
 				t.Fatal("resolved plan contains no steps")
 			}
+			plan, err = portableGoldenPlan(plan)
+			if err != nil {
+				t.Fatalf("canonicalize golden plan: %v", err)
+			}
 			got, err := json.MarshalIndent(plan, "", "  ")
 			if err != nil {
 				t.Fatal(err)
@@ -107,6 +112,24 @@ func TestResolveBundledRecipeGoldens(t *testing.T) {
 			}
 		})
 	}
+}
+
+// portableGoldenPlan keeps the committed fixtures independent of the host OS.
+// Resolved plans retain native paths for execution, while golden plans use the
+// slash-delimited paths stored in recipe manifests and committed JSON files.
+func portableGoldenPlan(plan Plan) (Plan, error) {
+	plan.ProjectDir = filepath.ToSlash(plan.ProjectDir)
+	plan.Steps = slices.Clone(plan.Steps)
+	for index := range plan.Steps {
+		plan.Steps[index].Dir = filepath.ToSlash(plan.Steps[index].Dir)
+	}
+
+	hash, err := hashSteps(plan.Steps)
+	if err != nil {
+		return Plan{}, err
+	}
+	plan.Hash = hash
+	return plan, nil
 }
 
 func TestResolveNeverSplitsOrReinterpretsSubstitutedValues(t *testing.T) {
