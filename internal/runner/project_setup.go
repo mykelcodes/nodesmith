@@ -634,7 +634,7 @@ func writeSetupFile(root, relative string, content []byte, defaultMode os.FileMo
 			return fmt.Errorf("open setup file %s: %w", relative, err)
 		}
 		if _, err := file.Write(content); err != nil {
-			file.Close()
+			_ = file.Close() // Preserve the more actionable write error.
 			return fmt.Errorf("write setup file %s: %w", relative, err)
 		}
 		if err := file.Close(); err != nil {
@@ -647,13 +647,13 @@ func writeSetupFile(root, relative string, content []byte, defaultMode os.FileMo
 		return fmt.Errorf("create temporary setup file %s: %w", relative, err)
 	}
 	temporaryPath := temporary.Name()
-	defer os.Remove(temporaryPath)
+	defer func() { _ = os.Remove(temporaryPath) }()
 	if err := temporary.Chmod(mode); err != nil {
-		temporary.Close()
+		_ = temporary.Close() // Preserve the chmod error.
 		return fmt.Errorf("set setup file mode %s: %w", relative, err)
 	}
 	if _, err := temporary.Write(content); err != nil {
-		temporary.Close()
+		_ = temporary.Close() // Preserve the write error.
 		return fmt.Errorf("write setup file %s: %w", relative, err)
 	}
 	if err := temporary.Close(); err != nil {
