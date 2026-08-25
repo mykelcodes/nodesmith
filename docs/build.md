@@ -101,24 +101,6 @@ Push a version tag such as `v1.0.0` to create the corresponding release. The mac
 the universal application bundle, the Windows archive contains the amd64 executable, and the Linux
 archive contains the amd64 binary.
 
-`.github/workflows/nightly-recipes.yml` has two layers:
-
-1. The offline contract matrix validates the embedded catalogue, parser, and committed golden plans
-   on macOS, Windows, and Linux without executing generator code.
-2. The execution matrix scaffolds all 14 recipes on every operating system, installs their
-   dependencies, and performs a recipe-appropriate build smoke test. It pins Wails to v2.13.0,
-   installs Rust for Tauri, and installs the required WebKitGTK development packages on Linux.
-
-The execution matrix uses `cmd/recipecheck`, which accepts smoke commands as strict JSON, resolves
-every executable through Nodesmith's native allowlisted resolver, and executes explicit argv through
-the production runner. It never passes a recipe or smoke command through a shell. Each scaffold and
-smoke phase has a 25-minute process-tree-aware timeout, the job has a 55-minute ceiling, and its
-temporary project is removed on success or failure.
-
-If either the offline contracts or execution matrix fails, a least-privilege notification job opens
-an issue containing the workflow run. Further failures comment on that open issue instead of
-creating duplicates; closing it allows a later regression to open a fresh issue.
-
 You can validate a recipe plan locally without downloading or running its generator:
 
 ```sh
@@ -128,4 +110,4 @@ task recipes:verify:dry \
 ```
 
 Remove `:dry` to execute the generator, dependency install, and smoke command. All built-in recipes
-support npm, so the scheduled workflow uses npm consistently across operating systems.
+support npm, so the verification command uses npm consistently.

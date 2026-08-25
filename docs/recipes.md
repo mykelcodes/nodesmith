@@ -321,5 +321,5 @@ Before changing `verifiedAt`:
    upstream generator exposes the necessary controls.
 8. Delete the temporary project and set `verifiedAt` to the verification date.
 
-Generator flags drift. Treat a nightly scaffold failure as a recipe defect, re-check upstream help,
-and change only the manifest rather than adding generator-specific logic to the Go backend.
+Generator flags drift. Treat a scaffold or smoke-build failure as a recipe defect, re-check upstream
+help, and change only the manifest rather than adding generator-specific logic to the Go backend.

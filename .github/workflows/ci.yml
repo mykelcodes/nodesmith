@@ -55,6 +55,9 @@ jobs:
         uses: golangci/golangci-lint-action@v9
         with:
           version: v2.11.4
+          # Schema verification downloads a versioned JSON schema at runtime.
+          # Keep linting deterministic when golangci-lint.run is unavailable.
+          verify: false
           args: ./...
 
   govulncheck:

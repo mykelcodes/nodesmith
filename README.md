@@ -87,8 +87,7 @@ the Wails desktop runtime.
 
 Build artifacts are written under `build/bin/`. CI runs tests and native builds on macOS, Windows,
 and Linux. Pushing a `v*` tag publishes the three packaged builds and their checksums on
-[GitHub Releases](https://github.com/mykelcodes/nodesmith/releases); the nightly workflow scaffolds
-and smoke-builds every bundled recipe on all three.
+[GitHub Releases](https://github.com/mykelcodes/nodesmith/releases).
 
 ## Documentation
 
